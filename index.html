@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NCGCL – Board Dashboard</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, "Segoe UI"; margin: 0; background: #f5f7fb; }
+    header { background: #035076; color: white; padding: 20px 40px; }
+    .container { max-width: 1100px; margin: 24px auto; padding: 0 16px; }
+    .card { background: white; padding: 20px; margin-bottom: 16px; border-radius: 12px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.04); }
+    .card h2 { margin-top: 0; color: #035076; }
+    .muted { color: #777; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>NCGCL – Board Dashboard</h1>
+    <p>Guarantee, investment, and risk overview</p>
+  </header>
+
+  <main class="container">
+    <!-- Current dashboard content here -->
+    <section class="card">
+      <h2>Current Board Pack</h2>
+      <p class="muted" id="current-pack-meta">
+        Latest approved board pack and KPI overview.
+      </p>
+      <!-- You can embed summary metrics / HTML here or even an iframe to the latest pack -->
+    </section>
+
+    <!-- Archive section -->
+    <section class="card">
+      <h2>Past Board Packs & Dashboards</h2>
+      <p class="muted">
+        Automatically generated from the archive manifest. New meetings only require
+        adding an entry in <code>boardpacks/manifest.json</code>.
+      </p>
+      <ul id="archive-list" style="line-height: 1.8;">
+        <!-- JS will populate this -->
+      </ul>
+      <p id="archive-empty" class="muted" style="display:none;">
+        No archived board packs are available yet.
+      </p>
+      <p id="archive-error" class="muted" style="display:none; color:#b33;">
+        Unable to load the archive list at the moment.
+      </p>
+    </section>
+  </main>
+
+  <script>
+    // Helper: format ISO date (YYYY-MM-DD) to something board-friendly (e.g., "Nov 2025")
+    function formatDateLabel(isoDate) {
+      if (!isoDate) return "";
+      const d = new Date(isoDate);
+      if (isNaN(d)) return isoDate; // fallback: show raw string if parsing fails
+      return d.toLocaleDateString("en-GB", { month: "short", year: "numeric", day: undefined });
+    }
+
+    // Fetch the manifest and populate the archive list
+    fetch("boardpacks/manifest.json")
+      .then(response => {
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+        return response.json();
+      })
+      .then(items => {
+        const list = document.getElementById("archive-list");
+        const emptyMsg = document.getElementById("archive-empty");
+
+        if (!Array.isArray(items) || items.length === 0) {
+          emptyMsg.style.display = "block";
+          return;
+        }
+
+        // Sort by date descending if 'date' is provided (latest first)
+        items.sort((a, b) => (b.date || "").localeCompare(a.date || ""));
+
+        // Optionally, update "Current Board Pack" meta based on the latest entry
+        const latest = items[0];
+        if (latest && latest.label) {
+          const currentMeta = document.getElementById("current-pack-meta");
+          const dateLabel = latest.date ? formatDateLabel(latest.date) : "";
+          currentMeta.textContent = `Latest pack: ${latest.label}${dateLabel ? " (" + dateLabel + ")" : ""}.`;
+        }
+
+        items.forEach(item => {
+          const li = document.createElement("li");
+          const link = document.createElement("a");
+          link.href = "boardpacks/" + item.file;
+          link.target = "_blank";
+          link.textContent = item.label || item.file;
+          li.appendChild(link);
+
+          if (item.date) {
+            const dateSpan = document.createElement("span");
+            dateSpan.style.marginLeft = "8px";
+            dateSpan.style.color = "#555";
+            dateSpan.textContent = `(${formatDateLabel(item.date)})`;
+            li.appendChild(dateSpan);
+          }
+
+          list.appendChild(li);
+        });
+      })
+      .catch(error => {
+        console.error("Error loading manifest.json:", error);
+        document.getElementById("archive-error").style.display = "block";
+      });
+  </script>
+</body>
+</html>
