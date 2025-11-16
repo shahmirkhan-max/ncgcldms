@@ -35,7 +35,7 @@
       <h2>Past Board Packs & Dashboards</h2>
       <p class="muted">
         Automatically generated from the archive manifest. New meetings only require
-        adding an entry in <code>boardpacks/manifest.json</code>.
+        adding an entry in <code>Board-packs/manifest.json</code>.
       </p>
       <ul id="archive-list" style="line-height: 1.8;">
         <!-- JS will populate this -->
@@ -59,7 +59,7 @@
     }
 
     // Fetch the manifest and populate the archive list
-    fetch("boardpacks/manifest.json")
+    fetch("Board-packs/manifest.json")
       .then(response => {
         if (!response.ok) {
           throw new Error("Network response was not ok");
@@ -89,7 +89,7 @@
         items.forEach(item => {
           const li = document.createElement("li");
           const link = document.createElement("a");
-          link.href = "boardpacks/" + item.file;
+          link.href = "Board-packs/" + item.file;
           link.target = "_blank";
           link.textContent = item.label || item.file;
           li.appendChild(link);
