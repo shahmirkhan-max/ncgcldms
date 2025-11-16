@@ -1,0 +1,2133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NCGCL Board Meeting Dashboard</title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Load Inter font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Load Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom Styles -->
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f4f7fa;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+        /* Sidebar active link */
+        .sidebar-link.active {
+            background-color: #e0e7ff;
+            color: #3730a3;
+            font-weight: 600;
+        }
+        /* Hide content sections by default */
+        .content-section {
+            display: none;
+        }
+        /* Show the active content section */
+        .content-section.active {
+            display: block;
+        }
+        /* Custom styles for calculators */
+        .calc-input {
+            @apply w-full p-2 border border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500;
+        }
+        .calc-label {
+            @apply block text-sm font-medium text-gray-700 mb-1;
+        }
+        .kpi-card {
+            @apply bg-white p-6 rounded-lg shadow-md transition-all duration-300 hover:shadow-lg;
+        }
+        .kpi-title {
+            @apply text-sm font-medium text-gray-500 uppercase tracking-wider;
+        }
+        .kpi-value {
+            @apply text-3xl font-bold text-gray-900 mt-2;
+        }
+        .kpi-delta {
+            @apply text-sm font-medium;
+        }
+        /* Simple bar for CAR calculator */
+        .car-bar-container {
+            @apply w-full bg-gray-200 rounded-full h-6 overflow-hidden relative;
+        }
+        .car-bar {
+            @apply bg-blue-600 h-full rounded-full transition-all duration-500 ease-out;
+        }
+        .car-target {
+            @apply absolute top-0 bottom-0 border-l-2 border-dashed border-red-500;
+        }
+        .car-target-label {
+            @apply absolute -top-5 text-xs font-bold text-red-500;
+        }
+        /* Accordion styles */
+        .accordion-header {
+            @apply w-full flex justify-between items-center p-4 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors duration-200;
+        }
+        .accordion-header.active {
+            @apply bg-indigo-100 rounded-b-none;
+        }
+        .accordion-content {
+            @apply p-6 bg-white border border-t-0 border-gray-200 rounded-b-lg;
+        }
+        .accordion-icon {
+            @apply text-xl font-semibold text-indigo-600 transition-transform duration-200;
+        }
+        .accordion-header.active .accordion-icon {
+            @apply transform rotate-45;
+        }
+        /* 3-stop slider */
+        .scenario-slider {
+            @apply w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer;
+        }
+        .scenario-slider::-webkit-slider-thumb {
+            @apply w-5 h-5 bg-indigo-600 rounded-full shadow-md appearance-none cursor-pointer -mt-1.5;
+        }
+        .scenario-slider::-moz-range-thumb {
+            @apply w-5 h-5 bg-indigo-600 rounded-full shadow-md cursor-pointer;
+        }
+        .scenario-labels {
+            @apply flex justify-between w-full px-1 text-sm font-medium text-gray-600;
+        }
+        /* Donut chart for C/I */
+        .ci-donut {
+            transform: rotate(-90deg);
+        }
+        .ci-donut-bg {
+            stroke: #e5e7eb; /* gray-200 */
+        }
+        .ci-donut-fg {
+            stroke-linecap: round;
+            transition: stroke-dasharray 0.5s ease-out;
+        }
+    </style>
+</head>
+<body class="flex h-screen overflow-hidden">
+
+    <!-- Sidebar Navigation -->
+    <nav class="w-64 h-full bg-white shadow-lg overflow-y-auto flex-shrink-0">
+        <div class="p-5 border-b">
+            <h1 class="text-xl font-bold text-indigo-700">NCGCL Board Dashboard</h1>
+            <p class="text-sm text-gray-500">Agenda Items</p>
+        </div>
+        <div class="py-4">
+            <!-- Navigation Links -->
+            <a href="#" class="sidebar-link active text-gray-700 hover:bg-gray-100 flex items-center px-6 py-3" data-target="impact-framework">
+                <span class="w-5 h-5 mr-3">🎯</span>
+                Impact Assessment
+            </a>
+            <a href="#" class="sidebar-link text-gray-700 hover:bg-gray-100 flex items-center px-6 py-3" data-target="finance-outsourcing">
+                <span class="w-5 h-5 mr-3">💼</span>
+                Finance Outsourcing
+            </a>
+            <a href="#" class="sidebar-link text-gray-700 hover:bg-gray-100 flex items-center px-6 py-3" data-target="karachi-office">
+                <span class="w-5 h-5 mr-3">🏢</span>
+                Karachi Office CAPEX
+            </a>
+            <a href="#" class="sidebar-link text-gray-700 hover:bg-gray-100 flex items-center px-6 py-3" data-target="financial-performance">
+                <span class="w-5 h-5 mr-3">📊</span>
+                Financial Performance
+            </a>
+            <a href="#" class="sidebar-link text-gray-700 hover:bg-gray-100 flex items-center px-6 py-3" data-target="hr-amendments">
+                <span class="w-5 h-5 mr-3">📄</span>
+                HR Manual Amendments
+            </a>
+            <a href="#" class="sidebar-link text-gray-700 hover:bg-gray-100 flex items-center px-6 py-3" data-target="corp-governance">
+                <span class="w-5 h-5 mr-3">🏛️</span>
+                Corporate Governance
+            </a>
+            <a href="#" class="sidebar-link text-gray-700 hover:bg-gray-100 flex items-center px-6 py-3" data-target="tax-optimization">
+                <span class="w-5 h-5 mr-3">📈</span>
+                Tax & Borrowing
+            </a>
+            <a href="#" class="sidebar-link text-gray-700 hover:bg-gray-100 flex items-center px-6 py-3" data-target="credit-risk">
+                <span class="w-5 h-5 mr-3">🛡️</span>
+                Credit Risk & Capital
+            </a>
+            <a href="#" class="sidebar-link text-gray-700 hover:bg-gray-100 flex items-center px-6 py-3" data-target="operations-manual">
+                <span class="w-5 h-5 mr-3">⚙️</span>
+                Operations Manual
+            </a>
+            <a href="#" class="sidebar-link text-gray-700 hover:bg-gray-100 flex items-center px-6 py-3" data-target="aml-cft">
+                <span class="w-5 h-5 mr-3">🔍</span>
+                AML/CFT Policy
+            </a>
+            <a href="#" class="sidebar-link text-gray-700 hover:bg-gray-100 flex items-center px-6 py-3" data-target="board-evaluation">
+                <span class="w-5 h-5 mr-3">📋</span>
+                Board Evaluation
+            </a>
+        </div>
+    </nav>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 h-full overflow-y-auto p-8 lg:p-12">
+
+        <!-- ====================================================== -->
+        <!-- 1. Impact Assessment Framework (RESTORED) -->
+        <!-- ====================================================== -->
+        <section id="impact-framework" class="content-section active space-y-8">
+            <h2 class="text-3xl font-bold text-gray-800 border-b pb-4">Impact Assessment Framework</h2>
+            
+            <!-- Summary -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Executive Summary</h3>
+                <p class="text-gray-700">
+                    This framework establishes the methodology to measure, manage, and report on NCGCL's progress against its strategic objectives. It is a critical management tool to ensure our activities create a verifiable developmental impact.
+                </p>
+                <p class="text-gray-700 mt-2">
+                    The framework is founded on principles of <strong>Mission Alignment</strong>, <strong>Data-Driven Analysis</strong>, and <strong>Accountability</strong>. It will be managed by a dedicated M&E function, reporting bi-annually to the Board.
+                </p>
+            </div>
+
+            <!-- Interactive Element: Corporate Logframe -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Interactive Element: Corporate Logframe</h3>
+                <p class="text-gray-600 mb-6">Click on a level of the logical framework to see the corresponding metrics and targets.</p>
+                
+                <!-- Logframe Tabs -->
+                <div class="mb-4 border-b border-gray-200">
+                    <nav class="flex -mb-px space-x-8" aria-label="Tabs">
+                        <button class="logframe-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-indigo-500 text-indigo-600" data-target="logframe-1">
+                            Inputs
+                        </button>
+                        <button class="logframe-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-target="logframe-2">
+                            Outputs
+                        </button>
+                        <button class="logframe-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-target="logframe-3">
+                            Outcomes
+                        </button>
+                        <button class="logframe-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-target="logframe-4">
+                            Impact
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Logframe Content -->
+                <div class="bg-gray-50 p-6 rounded-lg border">
+                    <!-- 1. Inputs -->
+                    <div id="logframe-1" class="logframe-content space-y-3">
+                        <h4 class="text-lg font-semibold text-gray-800">Level 1: Inputs (Our Resources)</h4>
+                        <p class="text-gray-600">The capital, people, and systems we deploy.</p>
+                        <ul class="list-disc list-inside space-y-2 text-gray-700">
+                            <li><span class="font-semibold">Financial Capital:</span> Total equity and borrowing capacity available.</li>
+                            <li><span class="font-semibold">Human Capital:</span> Staff deployed, PFI training sessions held.</li>
+                            <li><span class="font-semibold">Systems:</span> Digital guarantee platform deployed and operational.</li>
+                        </ul>
+                    </div>
+                    <!-- 2. Outputs -->
+                    <div id="logframe-2" class="logframe-content hidden space-y-3">
+                        <h4 class="text-lg font-semibold text-gray-800">Level 2: Outputs (Direct Results)</h4>
+                        <p class="text-gray-600">The direct products of our activities.</p>
+                        <ul class="list-disc list-inside space-y-2 text-gray-700">
+                            <li><span class="font-semibold">Guarantees Issued (PKR):</span> Volume of guarantees provided to PFIs.</li>
+                            <li><span class="font-semibold">Guarantees Issued (#):</span> Number of individual SMEs/loans supported.</li>
+                            <li><span class="font-semibold">PFIs Partnered:</span> Number of active financial institutions in the program.</li>
+                            <li><span class="font-semibold">Thematic Focus:</span> % of portfolio to Climate, Inclusion, or regional targets.</li>
+                        </ul>
+                    </div>
+                    <!-- 3. Outcomes -->
+                    <div id="logframe-3" class="logframe-content hidden space-y-3">
+                        <h4 class="text-lg font-semibold text-gray-800">Level 3: Outcomes (Changes in Behavior)</h4>
+                        <p class="text-gray-600">The changes our outputs create in our partners and end-borrowers.</p>
+                        <ul class="list-disc list-inside space-y-2 text-gray-700">
+                            <li><span class="font-semibold">For PFIs:</span> Increased % of SME lending in their total portfolio (additionality).</li>
+                            <li><span class="font-semibold">For PFIs:</span> Reduced collateral requirements or improved pricing for guaranteed loans.</li>
+                            <li><span class="font-semibold">For SMEs:</span> % of firms reporting access to finance as "less of a barrier."</li>
+                            <li><span class="font-semibold">For SMEs:</span> % of firms accessing formal credit for the first time ("new to bank").</li>
+                        </ul>
+                    </div>
+                    <!-- 4. Impact -->
+                    <div id="logframe-4" class="logframe-content hidden space-y-3">
+                        <h4 class="text-lg font-semibold text-gray-800">Level 4: Impact (Long-Term Strategic Goals)</h4>
+                        <p class="text-gray-600">The ultimate contribution to NCGCL's mission.</p>
+                        <ul class="list-disc list-inside space-y-2 text-gray-700">
+                            <li><span class="font-semibold">Job Creation:</span> Net new jobs created by supported SMEs.</li>
+                            <li><span class="font-semibold">Revenue Growth:</span> % increase in annual sales for supported SMEs.</li>
+                            <li><span class="font-semibold">Formalization:</span> % of firms moving from informal to formal sector.</li>
+                            <li><span class="font-semibold">Climate:</span> CO2 emissions reduced or avoided from green finance portfolio.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decision Required -->
+            <div class="border-t-4 border-blue-600 bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Decision Required</h3>
+                <p class="text-gray-700">
+                    The Board is requested to review and approve the NCGCL Impact Assessment Framework as the standard for measuring and reporting developmental performance.
+                </p>
+            </div>
+        </section>
+
+        <!-- ====================================================== -->
+        <!-- 2. Finance Outsourcing (RESTORED) -->
+        <!-- ====================================================== -->
+        <section id="finance-outsourcing" class="content-section space-y-8">
+            <h2 class="text-3xl font-bold text-gray-800 border-b pb-4">Agenda 5: Outsourcing of Finance Function</h2>
+            
+            <!-- Summary -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Executive Summary</h3>
+                <p class="text-gray-700">
+                    This proposal recommends outsourcing the Finance function for an initial 12-month term. The workload (month-end close, tax, payroll, reporting) is low-volume and predictable. Outsourcing provides specialist capacity (IFRS, tax, BI) and scales efficiently, avoiding a high fixed-cost base for a full in-house team.
+                </p>
+                <!-- Board Alert -->
+                <div class="mt-4 p-4 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+                    <h4 class="text-lg font-semibold text-yellow-800">Board Alert: Discrepancy Noted</h4>
+                    <p class="text-yellow-700">
+                        The proposal document requests a budget cap of <strong>PKR 7.5 million</strong> (Point 11), but the vendor proposals are <strong>PKR 9.0M</strong> and <strong>PKR 10.8M</strong> (Point 6). The proposed budget is insufficient to engage either vendor.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Interactive Element: Cost-Benefit Analysis -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Interactive Element: Cost-Benefit Analysis</h3>
+                <p class="text-gray-600 mb-6">Use the calculator to model the cost of a full in-house finance team versus the proposed outsourced model. The analysis is based on the costings in the agenda paper.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Inputs -->
+                    <div class="space-y-4">
+                        <h4 class="text-lg font-semibold text-gray-700">In-House Team Cost Modeler</h4>
+                        <div>
+                            <label for="cfo-cost" class="calc-label">CFO (Monthly Cost)</label>
+                            <input type="number" id="cfo-cost" class="calc-input finance-calc-input" value="1000000">
+                        </div>
+                        <div>
+                            <label for="manager-count" class="calc-label">Number of Managers</label>
+                            <input type="number" id="manager-count" class="calc-input finance-calc-input" value="2">
+                        </div>
+                        <div>
+                            <label for="manager-cost" class="calc-label">Avg. Manager (Monthly Cost)</label>
+                            <input type="number" id="manager-cost" class="calc-input finance-calc-input" value="400000">
+                        </div>
+                        <div>
+                            <label for="analyst-cost" class="calc-label">BI Analyst (Monthly Cost)</label>
+                            <input type="number" id="analyst-cost" class="calc-input finance-calc-input" value="120000">
+                        </div>
+                        <div>
+                            <label for="software-cost" class="calc-label">Software (Monthly Cost)</label>
+                            <input type="number" id="software-cost" class="calc-input finance-calc-input" value="100000">
+                        </div>
+                        <div>
+                            <label for="incidentals" class="calc-label">Incidentals (% of Payroll)</label>
+                            <input type="number" id="incidentals" class="calc-input finance-calc-input" value="20">
+                        </div>
+                    </div>
+                    
+                    <!-- Outputs -->
+                    <div class="bg-gray-50 p-6 rounded-lg border">
+                        <h4 class="text-lg font-semibold text-gray-700 mb-4">Cost Comparison (Annual)</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="text-sm font-medium text-gray-500">Calculated In-House Cost</div>
+                                <div class="text-2xl font-bold text-red-700" id="finance-out-inhouse">PKR 28,848,000</div>
+                                <div class="text-sm text-gray-500" id="finance-out-inhouse-monthly">PKR 2,404,000 / month</div>
+                            </div>
+                            <div class="border-t pt-4">
+                                <div class="text-sm font-medium text-gray-500">Proposed Outsourced Cost (Vendor B)</div>
+                                <div class="text-2xl font-bold text-green-700">PKR 10,800,000</div>
+                                <div class="text-sm text-gray-500">PKR 900,000 / month</div>
+                            </div>
+                            <div class="border-t pt-4">
+                                <div class="text-sm font-medium text-gray-500">Annual Savings</div>
+                                <div class="text-4xl font-bold text-blue-700" id="finance-out-savings">PKR 18,048,000</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decision Required -->
+            <div class="border-t-4 border-blue-600 bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Decision Required</h3>
+                <p class="text-gray-700">
+                    Approve outsourcing within a revised budget, authorize the CEO to finalize vendor selection, and mandate quarterly performance reporting to the Board Audit Committee.
+                </p>
+                <p class="text-gray-700 mt-2 font-medium">
+                    (Note: The Board must address the budget discrepancy of PKR 7.5M vs. the vendor cost of PKR 10.8M).
+                </p>
+            </div>
+        </section>
+
+        <!-- ====================================================== -->
+        <!-- 3. Karachi Office CAPEX (RESTORED) -->
+        <!-- ====================================================== -->
+        <section id="karachi-office" class="content-section space-y-8">
+            <h2 class="text-3xl font-bold text-gray-800 border-b pb-4">Agenda 6(a): Karachi Office CAPEX</h2>
+            
+            <!-- Summary -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Executive Summary</h3>
+                <p class="text-gray-700">
+                    This proposal seeks approval for a Capital Expenditure budget of <strong>PKR 52.10 million</strong> for the development of the NCGCL Head Office. The layout covers a net usable area of <strong>3,020 sq. ft.</strong> and the budget is consistent with Grade-A fit-out norms.
+                </p>
+                <div class="grid grid-cols-2 gap-4 mt-4">
+                    <div class="kpi-card bg-gray-50 !shadow-none border">
+                        <div class="kpi-title">Total Budget</div>
+                        <div class="kpi-value text-blue-700">PKR 52.1M</div>
+                    </div>
+                    <div class="kpi-card bg-gray-50 !shadow-none border">
+                        <div class="kpi-title">Total Area</div>
+                        <div class="kpi-value text-blue-700">3,020 sq. ft.</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Element 1: Budget Breakdown -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Interactive Element: CAPEX Budget Breakdown</h3>
+                <p class="text-gray-600 mb-6">This chart shows the cost allocation across the six major project disciplines. The total budget is <strong>PKR 52,098,000</strong>.</p>
+                
+                <div class="space-y-4" id="capex-chart">
+                    <!-- Data sourced from Annex II (Project Details CSV) -->
+                    <div class="text-sm font-medium text-gray-700">1. Civil ID/Finishes</div>
+                    <div class="w-full bg-gray-200 rounded-full h-6">
+                        <div class="relative flex justify-center items-center bg-indigo-600 h-6 rounded-full text-sm font-medium text-white text-right pr-2 leading-6" style="width: 30.73%">
+                            <span class="absolute left-2">PKR 16.01M (30.7%)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-sm font-medium text-gray-700">2. HVAC System</div>
+                    <div class="w-full bg-gray-200 rounded-full h-6">
+                        <div class="relative flex justify-center items-center bg-teal-600 h-6 rounded-full text-sm font-medium text-white text-right pr-2 leading-6" style="width: 29.35%">
+                            <span class="absolute left-2">PKR 15.29M (29.4%)</span>
+                        </div>
+                    </div>
+
+                    <div class="text-sm font-medium text-gray-700">3. Electrical System</div>
+                    <div class="w-full bg-gray-200 rounded-full h-6">
+                        <div class="relative flex justify-center items-center bg-yellow-600 h-6 rounded-full text-sm font-medium text-white text-right pr-2 leading-6" style="width: 20.63%">
+                            <span class="absolute left-2">PKR 10.75M (20.6%)</span>
+                        </div>
+                    </div>
+
+                    <div class="text-sm font-medium text-gray-700">4. Fire Safety System</div>
+                    <div class="w-full bg-gray-200 rounded-full h-6">
+                        <div class="relative flex justify-center items-center bg-red-600 h-6 rounded-full text-sm font-medium text-white text-right pr-2 leading-6" style="width: 10.08%">
+                            <span class="absolute left-2">PKR 5.25M (10.1%)</span>
+                        </div>
+                    </div>
+
+                    <div class="text-sm font-medium text-gray-700">5. Audio Video (AV) System</div>
+                    <div class="w-full bg-gray-200 rounded-full h-6">
+                        <div class="relative flex justify-center items-center bg-purple-600 h-6 rounded-full text-sm font-medium text-white text-right pr-2 leading-6" style="width: 5.95%">
+                            <span class="absolute left-2">PKR 3.10M (6.0%)</span>
+                        </div>
+                    </div>
+                    
+                    <div class="text-sm font-medium text-gray-700">6. Plumbing System</div>
+                    <div class="w-full bg-gray-200 rounded-full h-6">
+                        <div class="relative flex justify-center items-center bg-pink-600 h-6 rounded-full text-sm font-medium text-white text-right pr-2 leading-6" style="width: 3.26%">
+                            <span class="absolute left-2">PKR 1.70M (3.3%)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Granular Accordion Breakdown with Pie Charts -->
+                <div class="mt-8">
+                    <h4 class="text-lg font-semibold text-gray-700 mb-4">Granular Cost Breakdown</h4>
+                    <p class="text-sm text-gray-600 mb-4">Click on a discipline to expand its detailed line-item costs.</p>
+                    <div id="capex-accordion" class="space-y-2">
+                        
+                        <!-- 1. Civil ID/Finishes -->
+                        <div class="accordion-item">
+                            <button class="accordion-header">
+                                <span class="font-semibold text-gray-800">1. Civil ID/Finishes</span>
+                                <span class="font-bold text-indigo-700">PKR 16,010,000</span>
+                                <span class="accordion-icon">+</span>
+                            </button>
+                            <div class="accordion-content hidden">
+                                <h5 class="text-md font-semibold text-gray-700 mb-4 text-center">Civil ID/Finishes Breakdown</h5>
+                                <div class="w-full max-w-md mx-auto h-64">
+                                     <canvas id="civilPieChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 2. HVAC System -->
+                        <div class="accordion-item">
+                            <button class="accordion-header">
+                                <span class="font-semibold text-gray-800">2. HVAC System</span>
+                                <span class="font-bold text-indigo-700">PKR 15,290,000</span>
+                                <span class="accordion-icon">+</span>
+                            </button>
+                            <div class="accordion-content hidden">
+                                <h5 class="text-md font-semibold text-gray-700 mb-4 text-center">HVAC System Breakdown</h5>
+                                <div class="w-full max-w-md mx-auto h-64">
+                                     <canvas id="hvacPieChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 3. Electrical System -->
+                        <div class="accordion-item">
+                            <button class="accordion-header">
+                                <span class="font-semibold text-gray-800">3. Electrical System</span>
+                                <span class="font-bold text-indigo-700">PKR 10,750,000</span>
+                                <span class="accordion-icon">+</span>
+                            </button>
+                            <div class="accordion-content hidden">
+                                <h5 class="text-md font-semibold text-gray-700 mb-4 text-center">Electrical System Breakdown</h5>
+                                <div class="w-full max-w-md mx-auto h-64">
+                                    <canvas id="electricalPieChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- 4. Fire Safety System -->
+                        <div class="accordion-item">
+                            <button class="accordion-header">
+                                <span class="font-semibold text-gray-800">4. Fire Safety System</span>
+                                <span class="font-bold text-indigo-700">PKR 5,250,000</span>
+                                <span class="accordion-icon">+</span>
+                            </button>
+                            <div class="accordion-content hidden">
+                                 <h5 class="text-md font-semibold text-gray-700 mb-4 text-center">Fire Safety System Breakdown</h5>
+                                <div class="w-full max-w-md mx-auto h-64">
+                                    <canvas id="fireSafetyPieChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 5. Audio Video System -->
+                        <div class="accordion-item">
+                            <button class="accordion-header">
+                                <span class="font-semibold text-gray-800">5. Audio Video (AV) System</span>
+                                <span class="font-bold text-indigo-700">PKR 3,100,000</span>
+                                <span class="accordion-icon">+</span>
+                            </button>
+                            <div class="accordion-content hidden">
+                                <h5 class="text-md font-semibold text-gray-700 mb-4 text-center">Audio Video System Breakdown</h5>
+                                <div class="w-full max-w-md mx-auto h-64">
+                                    <canvas id="avPieChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 6. Plumbing System -->
+                        <div class="accordion-item">
+                            <button class="accordion-header">
+                                <span class="font-semibold text-gray-800">6. Plumbing System</span>
+                                <span class="font-bold text-indigo-700">PKR 1,700,000</span>
+                                <span class="accordion-icon">+</span>
+                            </button>
+                            <div class="accordion-content hidden">
+                                <h5 class="text-md font-semibold text-gray-700 mb-4 text-center">Plumbing System Breakdown</h5>
+                                <div class="w-full max-w-md mx-auto h-64">
+                                    <canvas id="plumbingPieChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Interactive calculator for cost per sq ft -->
+                <div class="mt-8 border-t pt-6">
+                     <h3 class="text-xl font-semibold text-gray-800 mb-4">Interactive Element 2: Cost/Sq. Ft. Calculator</h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div class="space-y-4">
+                            <div>
+                                <label for="capex-total-cost" class="calc-label">Total CAPEX Budget (PKR)</label>
+                                <input type="number" id="capex-total-cost" class="calc-input capex-calc-input" value="52098000">
+                            </div>
+                            <div>
+                                <label for="capex-sqft" class="calc-label">Net Usable Area (sq. ft.)</label>
+                                <input type="number" id="capex-sqft" class="calc-input capex-calc-input" value="3020">
+                            </div>
+                        </div>
+                        <div class="bg-gray-50 p-6 rounded-lg border flex items-center justify-center">
+                            <div>
+                                <div class="text-sm font-medium text-gray-500 text-center">Calculated Cost per Sq. Ft.</div>
+                                <div class="text-4xl font-bold text-blue-700 text-center mt-2" id="capex-out-cost-sqft">PKR 17,251</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decision Required -->
+            <div class="border-t-4 border-blue-600 bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Decision Required</h3>
+                <p class="text-gray-700">
+                    The Board approves a Capital Expenditure budget of <strong>PKR 52.10 million</strong> for the development of the NCGCL Head Office as per the scope outlined, and authorizes management to pursue competitive procurement and negotiations within this envelope.
+                </p>
+            </div>
+        </section>
+
+        <!-- ====================================================== -->
+        <!-- 4. Financial Performance (RESTORED) -->
+        <!-- ====================================================== -->
+        <section id="financial-performance" class="content-section space-y-8">
+            <h2 class="text-3xl font-bold text-gray-800 border-b pb-4">Agenda 3(d): Financial Performance (Q3 2025)</h2>
+            
+            <!-- Summary -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Executive Summary (as of 30 Sep 2025)</h3>
+                <p class="text-gray-700">
+                    The company has demonstrated strong financial performance over the first 9 months. Profit After Tax (PAT) stands at <strong>PKR 432.45 million</strong>, driven by robust income from investments and bank deposits. The balance sheet remains highly liquid and well-capitalized, with Total Assets at <strong>PKR 8.01 billion</strong>. The Cost to Income (C/I) ratio is exceptionally low at <strong>25.96%</strong>, reflecting high operational efficiency.
+                </p>
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6">
+                    <div class="kpi-card bg-green-50 border-l-4 border-green-500">
+                        <div class="kpi-title">Profit After Tax (PAT)</div>
+                        <div class="kpi-value text-green-700">PKR 432.5M</div>
+                    </div>
+                    <div class="kpi-card bg-blue-50 border-l-4 border-blue-500">
+                        <div class="kpi-title">Total Assets</div>
+                        <div class="kpi-value text-blue-700">PKR 8.01B</div>
+                    </div>
+                    <div class="kpi-card bg-yellow-50 border-l-4 border-yellow-500">
+                        <div class="kpi-title">Cost to Income (C/I) Ratio</div>
+                        <div class="kpi-value text-yellow-700" id="ci-ratio-kpi">25.96%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Element 1: C/I Ratio Calculator -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Interactive Element 1: Cost to Income (C/I) Ratio Modeler</h3>
+                <p class="text-gray-600 mb-6">This calculator demonstrates the C/I ratio, a key measure of operational efficiency. The current ratio is excellent. (Lower is better).</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Inputs -->
+                    <div class="space-y-4">
+                        <h4 class="text-lg font-semibold text-gray-700">P&L Inputs (YTD)</h4>
+                        <div>
+                            <label for="ci-income" class="calc-label">Total Income (Profit on Deposits, Investments, etc.)</label>
+                            <input type="number" id="ci-income" class="calc-input ci-calc-input" value="583626248">
+                        </div>
+                        <div>
+                            <label for="ci-admin-exp" class="calc-label">Administrative Expenses</label>
+                            <input type="number" id="ci-admin-exp" class="calc-input ci-calc-input" value="151475502">
+                        </div>
+                        <div>
+                            <label for="ci-finance-cost" class="calc-label">Finance Costs</label>
+                            <input type="number" id="ci-finance-cost" class="calc-input ci-calc-input" value="0">
+                        </div>
+                    </div>
+                    <!-- Outputs -->
+                    <div class="bg-gray-50 p-6 rounded-lg border flex items-center justify-center">
+                        <div class="relative w-36 h-36">
+                            <svg class="w-full h-full ci-donut" viewBox="0 0 36 36">
+                                <circle class="ci-donut-bg" cx="18" cy="18" r="15.915" fill="transparent" stroke-width="4"></circle>
+                                <circle class="ci-donut-fg text-blue-600" id="ci-ratio-bar" cx="18" cy="18" r="15.915" fill="transparent" stroke-width="4" stroke-dasharray="25.96, 100"></circle>
+                            </svg>
+                            <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center">
+                                <div class="text-3xl font-bold text-blue-700" id="ci-ratio-text">26.0%</div>
+                                <div class="text-sm font-medium text-gray-500">C/I Ratio</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Element 2: P&L and B/S Breakdown -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Interactive Element 2: Financial Statement Highlights</h3>
+                
+                <!-- Tabs -->
+                <div class="mb-4 border-b border-gray-200">
+                    <nav class="flex -mb-px space-x-8" aria-label="Tabs">
+                        <button class="fs-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-indigo-500 text-indigo-600" data-target="fs-pl">
+                            Profit & Loss (YTD)
+                        </button>
+                        <button class="fs-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-target="fs-bs">
+                            Balance Sheet
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Content -->
+                <div class="bg-gray-50 p-6 rounded-lg border">
+                    <!-- P&L Content -->
+                    <div id="fs-pl" class="fs-content space-y-3">
+                        <h4 class="text-lg font-semibold text-gray-800">Profit & Loss Breakdown (9 Months ended 30 Sep 2025)</h4>
+                        <ul class="list-disc list-inside space-y-2 text-gray-700">
+                            <li><span class="font-semibold">Profit on Bank Deposits:</span> PKR 427.6M (73% of Total Income)</li>
+                            <li><span class="font-semibold">Gain on Investments (FVTPL):</span> PKR 99.1M (17% of Total Income)</li>
+                            <li><span class="font-semibold">Profit on T-Bills:</span> PKR 56.9M (10% of Total Income)</li>
+                            <li class="border-t pt-2 mt-2"><span class="font-semibold">Total Income:</span> PKR 583.6M</li>
+                            <li class="border-t pt-2 mt-2"><span class="font-semibold">Total Administrative Expenses:</span> (PKR 151.5M)</li>
+                            <li class="border-t pt-2 mt-2 font-bold"><span class="font-semibold">Profit Before Tax:</span> PKR 432.1M</li>
+                        </ul>
+                    </div>
+                    <!-- Balance Sheet Content -->
+                    <div id="fs-bs" class="fs-content hidden space-y-3">
+                        <h4 class="text-lg font-semibold text-gray-800">Balance Sheet Breakdown (as of 30 Sep 2025)</h4>
+                         <ul class="list-disc list-inside space-y-2 text-gray-700">
+                            <li><span class="font-semibold">Cash & Bank Balances:</span> PKR 4.39B (54.8% of Total Assets)</li>
+                            <li><span class="font-semibold">Investment in T-Bills:</span> PKR 2.75B (34.3% of Total Assets)</li>
+                            <li><span class="font-semibold">Investment at FVTPL:</span> PKR 806.1M (10.1% of Total Assets)</li>
+                            <li class="border-t pt-2 mt-2"><span class="font-semibold">Total Assets:</span> PKR 8.01B</li>
+                            <li class="border-t pt-2 mt-2"><span class="font-semibold">Total Liabilities:</span> PKR 172.1M (2.1% of Assets)</li>
+                            <li class="border-t pt-2 mt-2 font-bold"><span class="font-semibold">Total Equity:</span> PKR 7.84B (97.9% of Assets)</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decision Required -->
+            <div class="border-t-4 border-blue-600 bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Way Forward</h3>
+                <p class="text-gray-700">
+                    The Board is requested to review and note the strong financial performance of the company as of Q3 2025.
+                </p>
+            </div>
+        </section>
+
+        <!-- ====================================================== -->
+        <!-- 5. HR Manual Amendments (RESTORED) -->
+        <!-- ====================================================== -->
+        <section id="hr-amendments" class="content-section space-y-8">
+            <h2 class="text-3xl font-bold text-gray-800 border-b pb-4">Agenda 2 (HR Committee): HR Manual Amendments</h2>
+            
+            <!-- Summary -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Executive Summary</h3>
+                <p class="text-gray-700">
+                    The HR Committee proposes two key amendments to the HR Manual for Board approval:
+                </p>
+                <ul class="list-decimal list-inside space-y-2 text-gray-700 mt-2">
+                    <li><strong>Voluntary Pension Scheme (VPS):</strong> Introduce a VPS with an employer match of up to 10% of base salary, against employee contribution.</li>
+                    <li><strong>OPD Health Policy:</strong> Shift from an upfront, fully-insured OPD model to a more cost-effective <strong>self-funded reimbursement model</strong>. OPD expenses (consultations, diagnostics, medicines) will be reimbursed on actuals up to a proposed annual limit of <strong>PKR 150,000 per employee</strong>.</li>
+                </ul>
+                <p class="text-gray-700 mt-2">
+                    This change maintains a robust health benefit while generating considerable cost savings by avoiding upfront premium payments for notional OPD coverage.
+                </p>
+            </div>
+
+            <!-- Interactive Element: OPD Cost Modeler -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Interactive Element: OPD Cost Scenario Modeler</h3>
+                <p class="text-gray-600 mb-6">This calculator models the potential cost savings of moving from an insured model to the proposed self-funded model. The key variable is the actual "utilization rate" of the self-funded pool.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Inputs -->
+                    <div class="space-y-4">
+                        <h4 class="text-lg font-semibold text-gray-700">Cost Inputs</h4>
+                        <div>
+                            <label for="hr-employees" class="calc-label">Total Employees</label>
+                            <input type="number" id="hr-employees" class="calc-input hr-calc-input" value="30">
+                        </div>
+                        <div>
+                            <label for="hr-premium" class="calc-label">Current Annual Insured OPD Premium (per Employee)</label>
+                            <input type="number" id="hr-premium" class="calc-input hr-calc-input" value="250000">
+                        </div>
+                        <div>
+                            <label for="hr-utilization" class="calc-label">Est. Utilization of Self-Funded Pool: <span class="text-lg font-semibold text-indigo-700" id="hr-utilization-label">70%</span></label>
+                            <input type="range" id="hr-utilization" min="0" max="100" step="5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer hr-calc-input" value="70">
+                        </div>
+                    </div>
+                    
+                    <!-- Outputs -->
+                    <div class="bg-gray-50 p-6 rounded-lg border">
+                        <h4 class="text-lg font-semibold text-gray-700 mb-4">Cost Comparison (Annual)</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="text-sm font-medium text-gray-500">Current Model: Fully Insured Cost</div>
+                                <div class="text-2xl font-bold text-red-700" id="hr-out-insured">PKR 7,500,000</div>
+                            </div>
+                            <div class="border-t pt-4">
+                                <div class="text-sm font-medium text-gray-500" id="hr-out-self-funded-label">New Model: Self-Funded Cost (at 70% Util.)</div>
+                                <div class="text-2xl font-bold text-green-700" id="hr-out-self-funded">PKR 3,150,000</div>
+                                <div class="text-sm text-gray-500">(Based on PKR 150,000 limit)</div>
+                            </div>
+                            <div class="border-t pt-4">
+                                <div class="text-sm font-medium text-gray-500">Projected Annual Savings</div>
+                                <div class="text-4xl font-bold text-blue-700" id="hr-out-savings">PKR 4,350,000</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decision Required -->
+            <div class="border-t-4 border-blue-600 bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Decision Required</h3>
+                <p class="text-gray-700">
+                    The Board is requested to approve the proposed amendments to the HR Manual, including:
+                </p>
+                 <ul class="list-decimal list-inside space-y-1 text-gray-700 mt-2">
+                    <li>The introduction of the Voluntary Pension Scheme (VPS).</li>
+                    <li>The change to a self-funded OPD model with an annual limit of <strong>PKR 150,000</strong> per employee.</li>
+                </ul>
+            </div>
+        </section>
+        
+        <!-- ====================================================== -->
+        <!-- 6. Corporate Governance (RESTORED) -->
+        <!-- ====================================================== -->
+        <section id="corp-governance" class="content-section space-y-8">
+            <h2 class="text-3xl font-bold text-gray-800 border-b pb-4">Agenda 2(e): Alignment with Corporate Governance Code</h2>
+            
+            <!-- Summary -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Executive Summary</h3>
+                <p class="text-gray-700">
+                    Per the BAC's suggestion, management has conducted a detailed review of NCGCL's alignment with governance best practices. This involved creating a consolidated checklist of <strong>113 requirements</strong> from the NBFC Regulations and the (voluntary) Code of Corporate Governance for Listed Companies, 2019.
+                </p>
+                <p class="text-gray-700 mt-2">
+                    This exercise provides a clear baseline of our current governance posture and identifies a roadmap for continuous improvement. Management proposes a 12-month plan to achieve full alignment on a best-effort basis, with quarterly updates to the BAC.
+                </p>
+            </div>
+
+            <!-- Interactive Element: Compliance Status -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Interactive Element: Current Compliance Status (of 113 Total Items)</h3>
+                <p class="text-gray-600 mb-6">This dashboard summarizes the findings from the compliance checklist (as of 20-Oct-2025).</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-4 gap-5">
+                    <div class="kpi-card bg-green-50 border-l-4 border-green-500">
+                        <div class="kpi-title">Compliant</div>
+                        <div class="kpi-value text-green-700">57</div>
+                        <div class="kpi-delta text-green-600">50.4%</div>
+                    </div>
+                    <div class="kpi-card bg-yellow-50 border-l-4 border-yellow-500">
+                        <div class="kpi-title">In-Process</div>
+                        <div class="kpi-value text-yellow-700">32</div>
+                        <div class="kpi-delta text-yellow-600">28.3% (via policy approvals)</div>
+                    </div>
+                     <div class="kpi-card bg-red-50 border-l-4 border-red-500">
+                        <div class="kpi-title">Non-Compliant</div>
+                        <div class="kpi-value text-red-700">3</div>
+                        <div class="kpi-delta text-red-600">2.7%</div>
+                    </div>
+                    <div class="kpi-card bg-gray-50 border-l-4 border-gray-400">
+                        <div class="kpi-title">Not Applicable</div>
+                        <div class="kpi-value text-gray-700">21</div>
+                        <div class="kpi-delta text-gray-600">18.6% (e.g., listed co. specifics)</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decision Required -->
+            <div class="border-t-4 border-blue-600 bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Way Forward & Decision Required</h3>
+                <p class="text-gray-700">
+                    The Board is requested to:
+                </p>
+                 <ul class="list-decimal list-inside space-y-1 text-gray-700 mt-2">
+                    <li>Note the findings of the corporate governance alignment review.</li>
+                    <li>Endorse the proposed 12-month "Way Forward" plan to achieve full alignment.</li>
+                    <li>Approve the submission of quarterly progress reports to the Board Audit Committee (BAC).</li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- ====================================================== -->
+        <!-- 7. Tax Optimization & Borrowing (FROM CONTEXT) -->
+        <!-- ====================================================== -->
+        <section id="tax-optimization" class="content-section space-y-8">
+            <h2 class="text-3xl font-bold text-gray-800 border-b pb-4">Agenda 7: Tax Optimization & Borrowing</h2>
+            
+            <!-- Summary -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Executive Summary</h3>
+                <p class="text-gray-700">
+                    This proposal aims to optimize NCGCL's effective tax rate and ROE. The strategy has two parts:
+                </p>
+                <ul class="list-decimal list-inside space-y-1 text-gray-700 mt-2">
+                    <li><strong>Tax-Efficient Investments:</strong> A target allocation of 50% in Banking Placements, 25% in MTBs (GOP T-Bills), and 25% in High-Grade Commercial Paper.</li>
+                    <li><strong>Leverage:</strong> Establishing borrowing lines (modelled at PKR 2.0B, with authority requested up to <strong>PKR 4.0B</strong>), secured against GoP securities. The interest expense creates a tax shield, reducing taxable income.</li>
+                </ul>
+                <p class="text-gray-700 mt-2">
+                    Based on the 12-month projections from the new workbook, the full strategy is expected to reduce the effective tax rate from <strong>~35.2%</strong> to <strong>~32.8%</strong>, generating an incremental PAT of <strong>~PKR 49 million</strong>.
+                </p>
+            </div>
+
+            <!-- Interactive Element: P&L Scenario Analysis (REPLACED CALCULATOR) -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Interactive Element: P&L Scenario Analysis (12-Month Projection)</h3>
+                <p class="text-gray-600 mb-6">This slider compares the 12-month projected P&L from the "Base" scenario against the two proposed strategies. Data is sourced from the "P&L" sheet in the tax workbook.</p>
+                
+                <div class="space-y-4">
+                    <!-- Slider Input -->
+                    <div>
+                        <input type="range" id="scenario-slider" class="scenario-slider" min="1" max="3" step="1" value="3">
+                        <div class="scenario-labels mt-2">
+                            <span>Base</span>
+                            <span>Optimized Investments</span>
+                            <span class="text-right">Investments + Leverage</span>
+                        </div>
+                    </div>
+
+                    <!-- Scenario Title -->
+                    <h4 class="text-xl font-bold text-center text-indigo-700 pt-4" id="scenario-title">Investments + Leverage</h4>
+
+                    <!-- Outputs -->
+                    <div class="grid grid-cols-2 lg:grid-cols-4 gap-5 pt-4 border-t">
+                        <div class="kpi-card bg-gray-50 border-l-4 border-gray-400">
+                            <div class="kpi-title">Profit Before Tax</div>
+                            <div class="kpi-value text-gray-800" id="scenario-out-pbt">PKR 716.2M</div>
+                        </div>
+                        <div class="kpi-card bg-gray-50 border-l-4 border-gray-400">
+                            <div class="kpi-title">Total Taxation</div>
+                            <div class="kpi-value text-gray-800" id="scenario-out-tax">PKR 234.7M</div>
+                        </div>
+                        <div class="kpi-card bg-blue-50 border-l-4 border-blue-500">
+                            <div class="kpi-title">Effective Tax Rate (ETR)</div>
+                            <div class="kpi-value text-blue-700" id="scenario-out-etr">32.77%</div>
+                        </div>
+                        <div class="kpi-card bg-green-50 border-l-4 border-green-500">
+                            <div class="kpi-title">Profit After Tax (PAT)</div>
+                            <div class="kpi-value text-green-700" id="scenario-out-pat">PKR 481.5M</div>
+                        </div>
+                    </div>
+                    <div class="flex justify-center pt-4">
+                        <div class="kpi-card bg-indigo-50 border-l-4 border-indigo-500 w-full lg:w-1/2">
+                            <div class="kpi-title text-center">Incremental PAT (vs. Base)</div>
+                            <div class="kpi-value text-indigo-700 text-center" id="scenario-out-incremental-pat">+ PKR 49.1M</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Decision Required -->
+            <div class="border-t-4 border-blue-600 bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Decision Required</h3>
+                <p class="text-gray-700">
+                    "...the Board hereby authorizes the establishment of secured or repo borrowing lines up to <strong>PKR 4,000,000,000</strong>... secured by pledge/rehypothecation of Government of Pakistan securities..."
+                </p>
+            </div>
+        </section>
+        
+        <!-- ====================================================== -->
+        <!-- 8. Credit Risk & Capital Management (FROM CONTEXT) -->
+        <!-- ====================================================== -->
+        <section id="credit-risk" class="content-section space-y-8">
+            <h2 class="text-3xl font-bold text-gray-800 border-b pb-4">Agenda 8: Credit Risk & Capital Management Policy</h2>
+
+            <!-- Summary -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Executive Summary</h3>
+                <p class="text-gray-700">
+                    This policy establishes the framework for managing credit risk and ensuring capital adequacy. It introduces an internal model for calculating <strong>Capital Adequacy Ratio (CAR)</strong>, moving beyond simple leverage.
+                </p>
+                <p class="text-gray-700 mt-2">
+                    Key pillars include:
+                </p>
+                <ul class="list-disc list-inside space-y-1 text-gray-700 mt-2">
+                    <li><strong>Capital Model:</strong> Defines Core Capital, Risk Capital, and Tier 2 Capital to calculate total capital available.</li>
+                    <li><strong>Risk-Weighted Assets (RWA):</strong> Calculated internally based on portfolio risk, not just nominal value.</li>
+                    <li><strong>CAR Target:</strong> A minimum CAR of <strong>20%</strong> is required (vs. 10% regulatory), with a target of <strong>25%</strong>.</li>
+                    <li><strong>Risk-Based Pricing:</strong> A matrix to determine guarantee fees based on Probability of Default (PD) and Loss Given Default (LGD).</li>
+                    <li><strong>Capital Intensity Model:</strong> A formula to adjust required capital based on transaction structure (e.g., first-loss vs. second-loss).</li>
+                </ul>
+            </div>
+
+            <!-- Interactive Element 1: CAR Calculator -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Interactive Element 1: Capital Adequacy Ratio (CAR) Calculator</h3>
+                <p class="text-gray-600 mb-6">This calculator demonstrates the internal CAR model. Adjust the inputs to see the impact on NCGCL's capital position against the 20% (min) and 25% (target) thresholds.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Inputs -->
+                    <div class="space-y-4">
+                        <h4 class="text-lg font-semibold text-gray-700">Capital & Risk Inputs</h4>
+                        <div>
+                            <label for="total-equity" class="calc-label">Total Equity (PKR)</label>
+                            <input type="number" id="total-equity" class="calc-input car-calc-input" value="10000000000">
+                        </div>
+                        <div>
+                            <label for="core-capital" class="calc-label">Core Capital (Assigned by Board)</label>
+                            <input type="number" id="core-capital" class="calc-input car-calc-input" value="7000000000">
+                        </div>
+                         <div>
+                            <label for="tier2-capital" class="calc-label">Tier 2 Capital (e.g., Sub-debt)</label>
+                            <input type="number" id="tier2-capital" class="calc-input car-calc-input" value="500000000">
+                        </div>
+                        <div>
+                            <label for="rwa" class="calc-label">Risk-Weighted Assets (RWA)</label>
+                            <input type="number" id="rwa" class="calc-input car-calc-input" value="15000000000">
+                        </div>
+                    </div>
+                    <!-- Outputs -->
+                    <div class="bg-gray-50 p-6 rounded-lg border">
+                        <h4 class="text-lg font-semibold text-gray-700 mb-4">Calculated Capital Position</h4>
+                        <div class="space-y-4">
+                            <div>
+                                <div class="text-sm font-medium text-gray-500">Available Risk Capital (Equity - Core)</div>
+                                <div class="text-2xl font-bold text-gray-800" id="car-out-risk-capital">PKR 3,000,000,000</div>
+                            </div>
+                            <div class="border-t pt-4">
+                                <div class="text-sm font-medium text-gray-500">Calculated CAR (Total Capital / RWA)</div>
+                                <div class="text-5xl font-bold text-blue-700 mt-2" id="car-out-car">23.33%</div>
+                            </div>
+                            <!-- Bar Chart -->
+                            <div class="mt-4">
+                                <div class="car-bar-container">
+                                    <div class="car-target" style="left: 50%;"> <!-- 20% / 40% = 50% -->
+                                        <div class="car-target-label" style="left: -15px;">20% Min</div>
+                                    </div>
+                                    <div class="car-target" style="left: 62.5%;"> <!-- 25% / 40% = 62.5% -->
+                                        <div class="car-target-label" style="left: -18px;">25% Target</div>
+                                    </div>
+                                    <div class="car-bar" id="car-out-bar" style="width: 58.325%;"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Element 2: Guarantee Structure Simulator -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Interactive Element 2: Guarantee Structure Simulator</h3>
+                <p class="text-gray-600 mb-6">This demonstrates how capital efficiency changes based on the guarantee structure (first-loss vs. second-loss). A "second-loss" position is highly efficient as NCGCL's capital is only hit after the PFI absorbs the initial losses.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <!-- Inputs -->
+                    <div class="space-y-4">
+                        <label for="loan-amount" class="calc-label">Total Loan Amount (PKR)</label>
+                        <input type="number" id="loan-amount" class="calc-input structure-calc-input" value="10000000">
+                        
+                        <label for="guarantee-pct" class="calc-label">Guarantee Coverage: <span class="text-lg font-semibold text-indigo-700" id="guarantee-pct-label">50%</span></label>
+                        <input type="range" id="guarantee-pct" min="10" max="100" step="5" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer structure-calc-input" value="50">
+                        
+                        <label for="guarantee-structure" class="calc-label">Guarantee Structure</label>
+                        <select id="guarantee-structure" class="calc-input structure-calc-input">
+                            <option value="pari-passu" selected>Pari-Passu (Standard)</option>
+                            <option value="first-loss">First-Loss (High Risk)</option>
+                            <option value="second-loss">Second-Loss (Low Risk)</option>
+                        </select>
+                    </div>
+                    <!-- Outputs -->
+                    <div class="md:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6 bg-gray-50 p-6 rounded-lg border">
+                        <div>
+                            <div class="text-sm font-medium text-gray-500">Exposure at Default (EAD)</div>
+                            <div class="text-2xl font-bold text-gray-800" id="structure-out-ead">PKR 5,000,000</div>
+                        </div>
+                        <div>
+                            <div class="text-sm font-medium text-gray-500">Capital Efficiency</div>
+                            <div class="text-2xl font-bold text-blue-700" id="structure-out-efficiency">Moderate</div>
+                        </div>
+                        <div class="sm:col-span-2">
+                            <div class="text-sm font-medium text-gray-500">Capital Consumption</div>
+                            <div class="text-2xl font-bold text-blue-700" id="structure-out-capital">Proportional to Risk</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Other Calculators -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Pricing Matrix -->
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Interactive Element 3: Risk-Based Pricing</h3>
+                    <p class="text-gray-600 mb-6">Select the client's risk profile to see the indicative fee (from Annex II).</p>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="pricing-pd" class="calc-label">Probability of Default (PD) Bucket</label>
+                            <select id="pricing-pd" class="calc-input pricing-calc-input">
+                                <option value="low" selected>Low (1-3%)</option>
+                                <option value="medium">Medium (3-6%)</option>
+                                <option value="high">High (6-10%)</option>
+                                <option value="vhigh">Very High (>10%)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="pricing-lgd" class="calc-label">Loss Given Default (LGD) Bucket</label>
+                            <select id="pricing-lgd" class="calc-input pricing-calc-input">
+                                <option value="low" selected>Low (<25%)</option>
+                                <option value="medium">Medium (25-45%)</option>
+                                <option value="high">High (>45%)</option>
+                            </select>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg border">
+                            <div class="text-sm font-medium text-gray-500 text-center">Indicative Annual Fee</div>
+                            <div class="text-4xl font-bold text-indigo-700 text-center mt-2" id="pricing-out-fee">~120 bps</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Intensity Calculator -->
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-4">Interactive Element 4: Capital Intensity</h3>
+                    <p class="text-gray-600 mb-6">Calculates final capital required based on risk multipliers (from Annex IV).</p>
+                    <div class="space-y-4">
+                        <div>
+                            <label for="base-k" class="calc-label">Base Capital (K) %</label>
+                            <input type="number" id="base-k" class="calc-input intensity-calc-input" value="8" step="0.5">
+                        </div>
+                        <div>
+                            <label for="intensity-structure" class="calc-label">Structure Multiplier (θ_struct)</label>
+                            <input type="number" id="intensity-structure" class="calc-input intensity-calc-input" value="1.5" step="0.1">
+                        </div>
+                        <div>
+                            <label for="intensity-conc" class="calc-label">Concentration Multiplier (θ_conc): <span id="intensity-conc-label" class="font-bold">1.10</span></label>
+                            <input type="range" id="intensity-conc" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer intensity-calc-input" min="1" max="2" step="0.05" value="1.1">
+                        </div>
+                        <div>
+                            <label for="intensity-vintage" class="calc-label">Vintage Multiplier (θ_vintage): <span id="intensity-vintage-label" class="font-bold">1.05</span></label>
+                            <input type="range" id="intensity-vintage" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer intensity-calc-input" min="1" max="1.5" step="0.01" value="1.05">
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg border">
+                            <div class="text-sm font-medium text-gray-500 text-center">Final Capital Intensity</div>
+                            <div class="text-4xl font-bold text-indigo-700 text-center mt-2" id="intensity-out-final">13.86%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decision Required -->
+            <div class="border-t-4 border-blue-600 bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Decision Required</h3>
+                <p class="text-gray-700">
+                    The Board is requested to review and approve the NCGCL Credit Risk & Capital Management Policy.
+                </p>
+            </div>
+        </section>
+
+        <!-- ====================================================== -->
+        <!-- 9. Operations Manual (FROM CONTEXT) -->
+        <!-- ====================================================== -->
+        <section id="operations-manual" class="content-section space-y-8">
+            <h2 class="text-3xl font-bold text-gray-800 border-b pb-4">Agenda 9: Operations Manual</h2>
+
+            <!-- Summary -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Executive Summary</h3>
+                <p class="text-gray-700">
+                    This Operations Manual is presented for Board approval as the comprehensive guide for all NCGCL operational activities. It standardizes procedures and defines responsibilities across the entire guarantee lifecycle to ensure efficiency, risk management, and compliance.
+                </p>
+                <p class="text-gray-700 mt-2">
+                    The manual covers 10 key sections, from PFI Onboarding and Guarantee Origination to Claims Management and Data Security. It is designed to be a living document, reviewed every two years, and will be digitized to support workflows.
+                </p>
+            </div>
+
+            <!-- Interactive Element: Guarantee Lifecycle Process Flow -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Interactive Element: The Guarantee Lifecycle</h3>
+                <p class="text-gray-600 mb-6">Click through the phases to see the standardized process flow as defined in the manual.</p>
+                
+                <!-- Process Tabs -->
+                <div class="mb-4 border-b border-gray-200">
+                    <nav class="flex -mb-px space-x-8" aria-label="Tabs">
+                        <button class="ops-flow-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-indigo-500 text-indigo-600" data-target="ops-flow-1">
+                            Phase 1: PFI Onboarding
+                        </button>
+                        <button class="ops-flow-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-target="ops-flow-2">
+                            Phase 2: Origination
+                        </button>
+                        <button class="ops-flow-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-target="ops-flow-3">
+                            Phase 3: Monitoring
+                        </button>
+                        <button class="ops-flow-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-target="ops-flow-4">
+                            Phase 4: Claims & Recovery
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Process Content -->
+                <div class="bg-gray-50 p-6 rounded-lg border">
+                    <!-- Flow 1: PFI Onboarding -->
+                    <div id="ops-flow-1" class="ops-flow-content space-y-3">
+                        <h4 class="text-lg font-semibold text-gray-800">Phase 1: PFI Onboarding (Section 3)</h4>
+                        <ul class="list-decimal list-inside space-y-2 text-gray-700">
+                            <li><strong>Application:</strong> PFI submits standardized application and due diligence pack.</li>
+                            <li><strong>Due Diligence:</strong> NCGCL (Risk & Compliance) assesses PFI's financial health, risk management, AML/CFT controls, and operational capacity.</li>
+                            <li><strong>Approval:</strong> Recommendation presented to the Guarantee Committee (GC) and/or Board for approval.</li>
+                            <li><strong>Agreement:</strong> Legal executes the Master Credit Guarantee Agreement (MCGA) upon approval.</li>
+                            <li><strong>System Setup:</strong> PFI is configured in the NCGCL digital guarantee platform.</li>
+                        </ul>
+                    </div>
+                    <!-- Flow 2: Origination -->
+                    <div id="ops-flow-2" class="ops-flow-content hidden space-y-3">
+                        <h4 class="text-lg font-semibold text-gray-800">Phase 2: Guarantee Origination (Section 4)</h4>
+                        <ul class="list-decimal list-inside space-y-2 text-gray-700">
+                            <li><strong>Submission:</strong> PFI submits borrower/facility details via the digital platform, confirming adherence to the agreed Guarantee Policy.</li>
+                            <li><strong>Screening:</strong> NCGCL system performs automated checks (eligibility, AML, limits).</li>
+                            <li><strong>Risk Assessment:</strong> NCGCL Risk team runs internal scoring, assigns risk rating, and confirms pricing.</li>
+                            <li><strong>Approval:</strong> Approved/rejected based on delegated authority matrix (GC or Management).</li>
+                            <li><strong>Issuance:</strong> System issues digital guarantee certificate; guarantee fee is invoiced.</li>
+                        </ul>
+                    </div>
+                    <!-- Flow 3: Monitoring -->
+                    <div id="ops-flow-3" class="ops-flow-content hidden space-y-3">
+                        <h4 class="text-lg font-semibold text-gray-800">Phase 3: Portfolio Monitoring (Section 6)</h4>
+                        <ul class="list-decimal list-inside space-y-2 text-gray-700">
+                            <li><strong>PFI Reporting:</strong> PFIs submit mandatory monthly/quarterly reports on portfolio performance (e.g., repayments, NPLs, risk ratings).</li>
+                            <li><strong>NCGCL Analysis:</strong> Risk team aggregates data, monitors covenant compliance, and tracks portfolio concentrations (sector, PFI, geography).</li>
+                            <li><strong>Watchlist:</strong> Facilities classified as "Substandard" or "Doubtful" are placed on an internal watchlist for heightened review.</li>
+                            <li><strong>Reporting:</strong> Quarterly portfolio health reports are submitted to the GC and the Board.</li>
+                        </ul>
+                    </div>
+                    <!-- Flow 4: Claims & Recovery -->
+                    <div id="ops-flow-4" class="ops-flow-content hidden space-y-3">
+                        <h4 class="text-lg font-semibold text-gray-800">Phase 4: Claims & Recovery (Section 7)</h4>
+                        <ul class="list-decimal list-inside space-y-2 text-gray-700">
+                            <li><strong>Loss Recognition:</strong> PFI notifies NCGCL of a default event (e.g., 90+ DPD) as per MCGA.</li>
+                            <li><strong>Claim Submission:</strong> PFI submits a formal claim using the standardized template after the "waiting period" (e.g., 180 DPD).</li>
+                            <li><strong>Validation:</strong> NCGCL Claims unit validates the claim against the guarantee terms (eligibility, documentation, PFI compliance).</li>
+                            <li><strong>Payout:</strong> Approved claims are paid out within the specified period (e.g., 30 days).</li>
+                            <li><strong>Recovery:</strong> NCGCL and PFI commence recovery actions. All recovered funds are shared proportionally as defined in the MCGA.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decision Required -->
+            <div class="border-t-4 border-blue-600 bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Decision Required</h3>
+                <p class="text-gray-700">
+                    The Board is requested to review and approve the NCGCL Operations Manual as the standard for all company operations.
+                </p>
+            </div>
+        </section>
+
+        <!-- ====================================================== -->
+        <!-- 10. AML/CFT Policy (FROM CONTEXT) -->
+        <!-- ====================================================== -->
+        <section id="aml-cft" class="content-section space-y-8">
+            <h2 class="text-3xl font-bold text-gray-800 border-b pb-4">Agenda 11: AML/CFT Policy</h2>
+
+            <!-- Summary -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Executive Summary</h3>
+                <p class="text-gray-700">
+                    This policy establishes NCGCL's framework to mitigate risks of Money Laundering (ML) and Terrorist Financing (TF). It is based on a "structured reliance" model, acknowledging that Partner Financial Institutions (PFIs) conduct the primary KYC/CDD on end-borrowers.
+                </p>
+                <p class="text-gray-700 mt-2">
+                    NCGCL's controls are therefore focused on:
+                </p>
+                <ul class="list-disc list-inside space-y-1 text-gray-700 mt-2">
+                    <li><strong>PFI Due Diligence:</strong> Robust onboarding and continuous monitoring of PFIs' own AML/CFT programs.</li>
+                    <li><strong>Data-Sharing:</strong> Mandating PFIs to provide end-borrower data via digital channels for screening.</li>
+                    <li><strong>Independent Screening:</strong> NCGCL performs its own automated, real-time screening of all parties (borrowers, directors) against sanctions lists (UN, NACTA, etc.).</li>
+                    <li><strong>Governance:</strong> Appointing a Chief Compliance Officer (CCO) and establishing clear escalation paths for high-risk clients or matches.</li>
+                </ul>
+            </div>
+
+            <!-- Interactive Element: Risk-Based Approach Scenarios -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Interactive Element: Risk-Based Approach in Action</h3>
+                <p class="text-gray-600 mb-6">This demonstrates how the policy is applied. Select a scenario to see NCGCL's risk-based controls.</p>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label for="aml-scenario" class="calc-label">Select Scenario</label>
+                        <select id="aml-scenario" class="calc-input">
+                            <option value="1" selected>Low Risk (Standard SME Borrower)</option>
+                            <option value="2">Medium Risk (PEP Borrower)</option>
+                            <option value="3">High Risk (Sanctions Match)</option>
+                        </select>
+                    </div>
+
+                    <!-- Scenario Content -->
+                    <div class="bg-gray-50 p-6 rounded-lg border">
+                        <!-- Scenario 1: Low Risk -->
+                        <div id="aml-scenario-1" class="aml-scenario-content space-y-3">
+                            <h4 class="text-lg font-semibold text-green-700">Controls: Low Risk (Standard SME)</h4>
+                            <ul class="list-decimal list-inside space-y-2 text-gray-700">
+                                <li><strong>PFI Action:</strong> PFI conducts Standard Customer Due Diligence (CDD).</li>
+                                <li><strong>NCGCL Action 1:</strong> Rely on PFI's CDD (as per Annex A).</li>
+                                <li><strong>NCGCL Action 2:</strong> PFI submits borrower data (name, ID#) to NCGCL portal.</li>
+                                <li><strong>NCGCL Action 3:</strong> Automated system screens data against UN/NACTA lists.
+                                    <span class="block text-sm text-gray-500 ml-6">(Result: No Match)</span>
+                                </li>
+                                <li><strong>Outcome:</strong> Guarantee application proceeds automatically.</li>
+                            </ul>
+                        </div>
+                        <!-- Scenario 2: Medium Risk -->
+                        <div id="aml-scenario-2" class="aml-scenario-content hidden space-y-3">
+                            <h4 class="text-lg font-semibold text-yellow-700">Controls: Medium Risk (Politically Exposed Person - PEP)</h4>
+                            <ul class="list-decimal list-inside space-y-2 text-gray-700">
+                                <li><strong>PFI Action:</strong> PFI conducts Enhanced Due Diligence (EDD) and gets senior management approval.</li>
+                                <li><strong>NCGCL Action 1:</strong> PFI submits borrower data to NCGCL portal; flags as PEP.</li>
+                                <li><strong>NCGCL Action 2:</strong> Automated system screens and confirms PEP status.
+                                    <span class="block text-sm text-gray-500 ml-6">(Result: PEP Match)</span>
+                                </li>
+                                <li><strong>NCGCL Action 3:</strong> Application is flagged and routed to NCGCL's <strong>Chief Compliance Officer (CCO)</strong>.</li>
+                                <li><strong>NCGCL Action 4:</strong> CCO reviews PFI's EDD, assesses the risk, and provides approval/rejection.</li>
+                                <li><strong>Outcome:</strong> Guarantee requires manual CCO approval.</li>
+                            </ul>
+                        </div>
+                        <!-- Scenario 3: High Risk -->
+                        <div id="aml-scenario-3" class="aml-scenario-content hidden space-y-3">
+                            <h4 class="text-lg font-semibold text-red-700">Controls: High Risk (Sanctions Match)</h4>
+                            <ul class="list-decimal list-inside space-y-2 text-gray-700">
+                                <li><strong>PFI Action:</strong> PFI's initial screening identifies a potential sanctions match and blocks the transaction.</li>
+                                <li><strong>NCGCL Action 1:</strong> PFI submits data to NCGCL portal.</li>
+                                <li><strong>NCGCL Action 2:</strong> Automated system screens data.
+                                    <span class="block text-sm text-red-600 ml-6">(Result: Positive Match on Sanctions List)</span>
+                                </li>
+                                <li><strong>NCGCL Action 3:</strong> Application is <strong>AUTOMATICALLY REJECTED</strong>.</li>
+                                <li><strong>NCGCL Action 4:</strong> Alert is escalated to CCO and Management.</li>
+                                <li><strong>Outcome:</strong> Guarantee is prohibited. NCGCL coordinates with PFI on any required regulatory reporting (e.g., to FMU).</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decision Required -->
+            <div class="border-t-4 border-blue-600 bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Decision Required</h3>
+                <p class="text-gray-700">
+                    The Board is requested to review and approve the NCGCL AML/CFT Policy.
+                </p>
+            </div>
+        </section>
+
+        <!-- ====================================================== -->
+        <!-- 11. Board Evaluation Framework (FROM CONTEXT) -->
+        <!-- ====================================================== -->
+        <section id="board-evaluation" class="content-section space-y-8">
+            <h2 class="text-3xl font-bold text-gray-800 border-b pb-4">Board Evaluation Framework</h2>
+
+            <!-- Summary -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Executive Summary & Philosophy</h3>
+                <p class="text-gray-700">
+                    This framework establishes a formal, annual process to assess and enhance the effectiveness of the Board, its Committees, and individual Directors. The philosophy is not one of compliance, but rather to use evaluation as a <strong>vital strategic instrument</strong> for continuous improvement, critical self-reflection, and accountability.
+                </p>
+                <p class="text-gray-700 mt-2">
+                    The process is led by the <strong>Human Resources & Nomination Committee (HRNC)</strong> and confidentially administered by the Company Secretary. An independent external facilitator will be engaged at least once every three years.
+                </p>
+            </div>
+
+            <!-- Key Pillars of Evaluation -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h4 class="text-lg font-semibold text-indigo-700">1. Collective Board Evaluation</h4>
+                    <p class="text-sm text-gray-600 mb-4">Focuses on the Board's performance as a unit.</p>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li>Strategic Alignment & Oversight</li>
+                        <li>Risk Governance & Internal Control</li>
+                        <li>Monitoring of Management & CEO</li>
+                        <li>Board Dynamics, Culture & Ethics</li>
+                        <li>Stakeholder & Regulatory Relations</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow">
+                    <h4 class="text-lg font-semibold text-teal-700">2. Committee & Individual Evaluation</h4>
+                    <p class="text-sm text-gray-600 mb-4">Assesses the specific effectiveness of committees and directors.</p>
+                    <ul class="list-disc list-inside space-y-2 text-gray-700">
+                        <li><strong>Committees:</strong> Fulfillment of Terms of Reference (TORs), efficiency, and quality of reporting to the Board.</li>
+                        <li><strong>Individual Directors:</strong> Preparation, participation, strategic contribution, independence, and relevant skills.</li>
+                        <li><strong>Peer Evaluation:</strong> Provides 360-degree feedback on individual director contributions.</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Interactive Element: Annual Evaluation Process Flow -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h3 class="text-xl font-semibold text-gray-800 mb-4">Interactive Element: The Annual Evaluation Cycle</h3>
+                <p class="text-gray-600 mb-6">Click through the phases to see the evaluation process from start to finish. The primary output is a formal Action Plan.</p>
+                
+                <!-- Process Tabs -->
+                <div class="mb-4 border-b border-gray-200">
+                    <nav class="flex -mb-px space-x-8" aria-label="Tabs">
+                        <button class="eval-flow-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-indigo-500 text-indigo-600" data-target="eval-flow-1">
+                            Phase 1: Data Collection
+                        </button>
+                        <button class="eval-flow-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-target="eval-flow-2">
+                            Phase 2: Analysis & Reporting
+                        </button>
+                        <button class="eval-flow-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-target="eval-flow-3">
+                            Phase 3: Board Discussion
+                        </button>
+                        <button class="eval-flow-tab whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300" data-target="eval-flow-4">
+                            Phase 4: Action & Follow-up
+                        </button>
+                    </nav>
+                </div>
+
+                <!-- Process Content -->
+                <div class="bg-gray-50 p-6 rounded-lg border">
+                    <!-- Flow 1: Data Collection -->
+                    <div id="eval-flow-1" class="eval-flow-content space-y-3">
+                        <h4 class="text-lg font-semibold text-gray-800">Phase 1: Data Collection (Annual)</h4>
+                        <ul class="list-decimal list-inside space-y-2 text-gray-700">
+                            <li><strong>Administrator:</strong> Company Secretary, under HRNC oversight.</li>
+                            <li><strong>Tools:</strong>
+                                <ul class="list-disc list-inside ml-6">
+                                    <li>Confidential self-assessment surveys (for Board & Committees).</li>
+                                    <li>Confidential peer-assessment surveys (for Individual Directors).</li>
+                                    <li>Objective data (e.g., meeting attendance, skill matrix).</li>
+                                </ul>
+                            </li>
+                            <li><strong>External Facilitation:</strong> Engaged at least once every 3 years to ensure objectivity.</li>
+                        </ul>
+                    </div>
+                    <!-- Flow 2: Analysis & Reporting -->
+                    <div id="eval-flow-2" class="eval-flow-content hidden space-y-3">
+                        <h4 class="text-lg font-semibold text-gray-800">Phase 2: Aggregation, Analysis & Reporting</h4>
+                        <ul class="list-decimal list-inside space-y-2 text-gray-700">
+                            <li><strong>Aggregation:</strong> Company Secretary compiles and anonymizes all survey responses and objective data into a single, aggregated report.</li>
+                            <li><strong>Review:</strong> The <strong>HRNC</strong> reviews the aggregated report first. They analyze key themes, strengths, and areas for development.</li>
+                            <li><strong>Report Finalization:</strong> The HRNC finalizes the report and its key findings to be presented to the full Board.</li>
+                        </ul>
+                    </div>
+                    <!-- Flow 3: Board Discussion -->
+                    <div id="eval-flow-3" class="eval-flow-content hidden space-y-3">
+                        <h4 class="text-lg font-semibold text-gray-800">Phase 3: Board Discussion & Feedback</h4>
+                        <ul class="list-decimal list-inside space-y-2 text-gray-700">
+                            <li><strong>Presentation:</strong> The Chair of the HRNC presents the aggregated report and findings to the full Board in a dedicated session.</li>
+                            <li><strong>Facilitated Discussion:</strong> The Board engages in an open, constructive discussion on the results, moderated by the Chairman (or external facilitator).</li>
+                            <li><strong>Individual Feedback:</strong>
+                                <ul class="list-disc list-inside ml-6">
+                                    <li>The <strong>Chairman</strong> provides private feedback to each Director.</li>
+                                    <li>The <strong>HRNC Chair</strong> provides private feedback to the Chairman.</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </div>
+                    <!-- Flow 4: Action Plan & Follow-up -->
+                    <div id="eval-flow-4" class="eval-flow-content hidden space-y-3">
+                        <h4 class="text-lg font-semibold text-gray-800">Phase 4: Action Plan & Follow-up (The "Way Forward")</h4>
+                        <ul class="list-decimal list-inside space-y-2 text-gray-700">
+                            <li><strong>Formal Plan:</strong> Based on the discussion, a formal <strong>Board Evaluation Action Plan</strong> is developed.</li>
+                            <li><strong>Content:</strong> The plan identifies specific, measurable, and time-bound actions to address identified gaps or enhancement areas.</li>
+                            <li><strong>Linkages:</strong> The plan directly informs:
+                                <ul class="list-disc list-inside ml-6">
+                                    <li>Board & Committee succession planning.</li>
+                                    <li>Individual Director training and development plans.</li>
+                                    <li>Improvements to governance processes or Committee TORs.</li>
+                                </ul>
+                            </li>
+                            <li><strong>Monitoring:</strong> The <strong>HRNC</strong> is responsible for monitoring the implementation of the Action Plan throughout the year.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Decision Required -->
+            <div class="border-t-4 border-blue-600 bg-white p-6 rounded-lg shadow-md">
+                <h3 class="text-xl font-semibold text-gray-800 mb-3">Way Forward & Decision Required</h3>
+                <p class="text-gray-700">
+                    "The Board is requested to review and formally approve the <strong>Board Evaluation Framework and Policy</strong>."
+                </p>
+                <p class="text-gray-700 mt-2">
+                    "Upon approval, the Board authorizes the HRNC and the Company Secretary to initiate the first evaluation cycle for the current fiscal year, with findings and a draft action plan to be presented to the Board in accordance with the outlined timeline."
+                </p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- JavaScript -->
+    <script>
+        window.addEventListener('DOMContentLoaded', (event) => {
+            
+            // ======================================================
+            // 1. Sidebar Navigation
+            // ======================================================
+            const sidebarLinks = document.querySelectorAll('.sidebar-link');
+            const contentSections = document.querySelectorAll('.content-section');
+
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    
+                    const targetId = link.getAttribute('data-target');
+
+                    // Update active link
+                    sidebarLinks.forEach(l => l.classList.remove('active'));
+                    link.classList.add('active');
+
+                    // Show target content
+                    contentSections.forEach(section => {
+                        if (section.id === targetId) {
+                            section.classList.add('active');
+                        } else {
+                            section.classList.remove('active');
+                        }
+                    });
+                    
+                    // Scroll content to top
+                    const main = document.querySelector('main');
+                    if (main) main.scrollTop = 0;
+                });
+            });
+
+            // ======================================================
+            // 1. Impact Assessment Logframe Tabs
+            // ======================================================
+            const logframeTabs = document.querySelectorAll('.logframe-tab');
+            const logframeContents = document.querySelectorAll('.logframe-content');
+
+            logframeTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetId = tab.getAttribute('data-target');
+                    
+                    // Update tabs
+                    logframeTabs.forEach(t => {
+                        t.classList.remove('border-indigo-500', 'text-indigo-600');
+                        t.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    });
+                    tab.classList.add('border-indigo-500', 'text-indigo-600');
+                    tab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    
+                    // Update content
+                    logframeContents.forEach(content => {
+                        if (content.id === targetId) {
+                            content.classList.remove('hidden');
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            // ======================================================
+            // 2. Finance Outsourcing Calculator
+            // ======================================================
+            const financeInputs = document.querySelectorAll('.finance-calc-input');
+            const financeOutInhouse = document.getElementById('finance-out-inhouse');
+            const financeOutInhouseMonthly = document.getElementById('finance-out-inhouse-monthly');
+            const financeOutSavings = document.getElementById('finance-out-savings');
+            const outsourcedCost = 10800000; // From analysis (Point 6, Vendor B)
+
+            function calculateFinanceCosts() {
+                try {
+                    const cfoCost = parseFloat(document.getElementById('cfo-cost').value) || 0;
+                    const managerCount = parseInt(document.getElementById('manager-count').value) || 0;
+                    const managerCost = parseFloat(document.getElementById('manager-cost').value) || 0;
+                    const analystCost = parseFloat(document.getElementById('analyst-cost').value) || 0;
+                    const softwareCost = parseFloat(document.getElementById('software-cost').value) || 0;
+                    const incidentalsPct = parseFloat(document.getElementById('incidentals').value) || 0;
+
+                    const payroll = cfoCost + (managerCount * managerCost) + analystCost;
+                    const incidentals = payroll * (incidentalsPct / 100);
+                    const totalMonthly = payroll + softwareCost + incidentals;
+                    const totalAnnual = totalMonthly * 12;
+                    const savings = totalAnnual - outsourcedCost;
+
+                    if (financeOutInhouse) financeOutInhouse.textContent = `PKR ${totalAnnual.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+                    if (financeOutInhouseMonthly) financeOutInhouseMonthly.textContent = `PKR ${totalMonthly.toLocaleString('en-US', { maximumFractionDigits: 0 })} / month`;
+                    if (financeOutSavings) financeOutSavings.textContent = `PKR ${savings.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+                } catch (e) {
+                    console.error("Finance calc error:", e);
+                }
+            }
+            if (financeInputs.length > 0) {
+                financeInputs.forEach(input => input.addEventListener('input', calculateFinanceCosts));
+                calculateFinanceCosts(); // Initial calc
+            }
+
+            // ======================================================
+            // 3. Karachi Office CAPEX Calculator
+            // ======================================================
+            const capexInputs = document.querySelectorAll('.capex-calc-input');
+            const capexOutCostSqft = document.getElementById('capex-out-cost-sqft');
+
+            function calculateCapexPerSqft() {
+                try {
+                    const totalCost = parseFloat(document.getElementById('capex-total-cost').value) || 0;
+                    const totalSqft = parseFloat(document.getElementById('capex-sqft').value) || 0;
+                    
+                    const costPerSqft = (totalSqft > 0) ? (totalCost / totalSqft) : 0;
+
+                    if (capexOutCostSqft) {
+                        capexOutCostSqft.textContent = `PKR ${costPerSqft.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+                    }
+                } catch (e) {
+                    console.error("CAPEX calc error:", e);
+                }
+            }
+            
+            if (capexInputs.length > 0) {
+                capexInputs.forEach(input => input.addEventListener('input', calculateCapexPerSqft));
+                calculateCapexPerSqft(); // Initial calc
+            }
+
+            // Accordion logic for granular CAPEX
+            const accordionHeaders = document.querySelectorAll('.accordion-header');
+            if (accordionHeaders.length > 0) {
+                accordionHeaders.forEach(header => {
+                    header.addEventListener('click', () => {
+                        const content = header.nextElementSibling;
+                        const icon = header.querySelector('.accordion-icon');
+                        
+                        // Toggle active class on header
+                        header.classList.toggle('active');
+
+                        if (content.classList.contains('hidden')) {
+                            // Open accordion
+                            content.classList.remove('hidden');
+                            if (icon) icon.textContent = '−';
+                        } else {
+                            // Close accordion
+                            content.classList.add('hidden');
+                            if (icon) icon.textContent = '+';
+                        }
+                    });
+                });
+            }
+            
+            // ======================================================
+            // 4. Financial Performance (C/I Calc)
+            // ======================================================
+            const ciInputs = document.querySelectorAll('.ci-calc-input');
+            const ciRatioKpi = document.getElementById('ci-ratio-kpi');
+            const ciRatioText = document.getElementById('ci-ratio-text');
+            const ciRatioBar = document.getElementById('ci-ratio-bar');
+
+            function calculateCiRatio() {
+                try {
+                    const income = parseFloat(document.getElementById('ci-income').value) || 0;
+                    const adminExp = parseFloat(document.getElementById('ci-admin-exp').value) || 0;
+                    const financeCost = parseFloat(document.getElementById('ci-finance-cost').value) || 0;
+                    
+                    const totalExpenses = adminExp + financeCost;
+                    const ciRatio = (income > 0) ? (totalExpenses / income) * 100 : 0;
+                    
+                    const ciFormatted = `${ciRatio.toFixed(2)}%`;
+                    const ciFormattedShort = `${ciRatio.toFixed(1)}%`;
+
+                    if (ciRatioKpi) ciRatioKpi.textContent = ciFormatted;
+                    if (ciRatioText) ciRatioText.textContent = ciFormattedShort;
+                    if (ciRatioBar) {
+                        ciRatioBar.setAttribute('stroke-dasharray', `${ciRatio.toFixed(2)}, 100`);
+                        // Change color if it's good (low) or bad (high)
+                        if (ciRatio < 30) {
+                            ciRatioBar.classList.remove('text-yellow-600', 'text-red-600');
+                            ciRatioBar.classList.add('text-blue-600');
+                            if (ciRatioText) ciRatioText.classList.remove('text-yellow-700', 'text-red-700');
+                            if (ciRatioText) ciRatioText.classList.add('text-blue-700');
+                        } else if (ciRatio < 45) {
+                            ciRatioBar.classList.remove('text-blue-600', 'text-red-600');
+                            ciRatioBar.classList.add('text-yellow-600');
+                            if (ciRatioText) ciRatioText.classList.remove('text-blue-700', 'text-red-700');
+                            if (ciRatioText) ciRatioText.classList.add('text-yellow-700');
+                        } else {
+                            ciRatioBar.classList.remove('text-blue-600', 'text-yellow-600');
+                            ciRatioBar.classList.add('text-red-600');
+                            if (ciRatioText) ciRatioText.classList.remove('text-blue-700', 'text-yellow-700');
+                            if (ciRatioText) ciRatioText.classList.add('text-red-700');
+                        }
+                    }
+                } catch (e) {
+                    console.error("C/I calc error:", e);
+                }
+            }
+            if (ciInputs.length > 0) {
+                ciInputs.forEach(input => input.addEventListener('input', calculateCiRatio));
+                calculateCiRatio(); // Initial calc
+            }
+
+            // ======================================================
+            // 4. Financial Performance (P&L / B/S Tabs)
+            // ======================================================
+            const fsTabs = document.querySelectorAll('.fs-tab');
+            const fsContents = document.querySelectorAll('.fs-content');
+
+            fsTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetId = tab.getAttribute('data-target');
+                    
+                    // Update tabs
+                    fsTabs.forEach(t => {
+                        t.classList.remove('border-indigo-500', 'text-indigo-600');
+                        t.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    });
+                    tab.classList.add('border-indigo-500', 'text-indigo-600');
+                    tab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    
+                    // Update content
+                    fsContents.forEach(content => {
+                        if (content.id === targetId) {
+                            content.classList.remove('hidden');
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            // ======================================================
+            // 5. HR Manual Calculator
+            // ======================================================
+            const hrInputs = document.querySelectorAll('.hr-calc-input');
+            const hrUtilizationLabel = document.getElementById('hr-utilization-label');
+            const hrOutInsured = document.getElementById('hr-out-insured');
+            const hrOutSelfFunded = document.getElementById('hr-out-self-funded');
+            const hrOutSavings = document.getElementById('hr-out-savings');
+            const newOpdLimit = 150000; // Based on recommendation 5.b
+
+            function calculateHrCosts() {
+                try {
+                    const employees = parseInt(document.getElementById('hr-employees').value) || 0;
+                    const premium = parseFloat(document.getElementById('hr-premium').value) || 0;
+                    const utilization = parseFloat(document.getElementById('hr-utilization').value) || 0;
+
+                    const insuredCost = employees * premium;
+                    const selfFundedCost = employees * newOpdLimit * (utilization / 100);
+                    const savings = insuredCost - selfFundedCost;
+
+                    if (hrUtilizationLabel) hrUtilizationLabel.textContent = `${utilization}%`;
+                    if (hrOutInsured) hrOutInsured.textContent = `PKR ${insuredCost.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+                    if (hrOutSelfFunded) {
+                        hrOutSelfFunded.textContent = `PKR ${selfFundedCost.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+                        const label = document.getElementById('hr-out-self-funded-label');
+                        if(label) label.textContent = `New Model: Self-Funded Cost (at ${utilization}% Util.)`;
+                    }
+                    if (hrOutSavings) hrOutSavings.textContent = `PKR ${savings.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+
+                } catch (e) {
+                    console.error("HR calc error:", e);
+                }
+            }
+            if (hrInputs.length > 0) {
+                hrInputs.forEach(input => input.addEventListener('input', calculateHrCosts));
+                calculateHrCosts(); // Initial calc
+            }
+
+            // ======================================================
+            // 7. Tax Optimization Calculator (Note: section 7 in sidebar)
+            // ======================================================
+            // NEW: P&L Scenario Slider
+            const scenarioSlider = document.getElementById('scenario-slider');
+            const scenarioTitle = document.getElementById('scenario-title');
+            const scenarioPBT = document.getElementById('scenario-out-pbt');
+            const scenarioTax = document.getElementById('scenario-out-tax');
+            const scenarioETR = document.getElementById('scenario-out-etr');
+            const scenarioPAT = document.getElementById('scenario-out-pat');
+            const scenarioIncPAT = document.getElementById('scenario-out-incremental-pat');
+
+            // Data from P&L.csv
+            const baseScenario = {
+                title: "Base Scenario",
+                pbt: 667249266,
+                tax: 234798520,
+                pat: 432450746,
+                etr: (234798520 / 667249266) * 100,
+                incPat: 0
+            };
+            const optimizedScenario = {
+                title: "Optimized Investments",
+                pbt: 683071044,
+                tax: 235797218,
+                pat: 447273826,
+                etr: (235797218 / 683071044) * 100,
+                incPat: 447273826 - baseScenario.pat
+            };
+            const leverageScenario = {
+                title: "Investments + Leverage",
+                pbt: 716219366,
+                tax: 234707905,
+                pat: 481511461,
+                etr: (234707905 / 716219366) * 100,
+                incPat: 481511461 - baseScenario.pat
+            };
+
+            const scenarios = [null, baseScenario, optimizedScenario, leverageScenario]; // 1-indexed
+
+            const formatM = (value) => `PKR ${(value / 1000000).toFixed(1)}M`;
+
+            function updateTaxScenario() {
+                if (!scenarioSlider) return;
+                const scenario = scenarios[scenarioSlider.value];
+                if (!scenario) return;
+
+                if (scenarioTitle) scenarioTitle.textContent = scenario.title;
+                if (scenarioPBT) scenarioPBT.textContent = formatM(scenario.pbt);
+                if (scenarioTax) scenarioTax.textContent = formatM(scenario.tax);
+                if (scenarioETR) scenarioETR.textContent = `${scenario.etr.toFixed(2)}%`;
+                if (scenarioPAT) scenarioPAT.textContent = formatM(scenario.pat);
+                if (scenarioIncPAT) {
+                    scenarioIncPAT.textContent = `+ ${formatM(scenario.incPat)}`;
+                    if (scenario.incPat === 0) {
+                        scenarioIncPAT.textContent = `—`;
+                    }
+                }
+            }
+
+            if (scenarioSlider) {
+                scenarioSlider.addEventListener('input', updateTaxScenario);
+                updateTaxScenario(); // Initial calc
+            }
+
+
+            // ======================================================
+            // 8. Credit Risk Calculators (Note: section 8 in sidebar)
+            // ======================================================
+
+            // --- 8.1. CAR Calculator ---
+            const carInputs = document.querySelectorAll('.car-calc-input');
+            const carOutRiskCapital = document.getElementById('car-out-risk-capital');
+            const carOutCar = document.getElementById('car-out-car');
+            const carOutBar = document.getElementById('car-out-bar');
+
+            function calculateCAR() {
+                try {
+                    const totalEquity = parseFloat(document.getElementById('total-equity').value) || 0;
+                    const coreCapital = parseFloat(document.getElementById('core-capital').value) || 0;
+                    const tier2Capital = parseFloat(document.getElementById('tier2-capital').value) || 0;
+                    const rwa = parseFloat(document.getElementById('rwa').value) || 0;
+
+                    const riskCapital = totalEquity - coreCapital;
+                    const totalCapital = riskCapital + tier2Capital;
+                    const car = (rwa > 0) ? (totalCapital / rwa) * 100 : 0;
+
+                    if(carOutRiskCapital) carOutRiskCapital.textContent = `PKR ${riskCapital.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+                    if(carOutCar) carOutCar.textContent = `${car.toFixed(2)}%`;
+                    
+                    // Update bar
+                    if(carOutBar) {
+                        let barWidth = Math.min(car, 40); // Cap bar width at 40% for visual sanity
+                        barWidth = (barWidth / 40) * 100; // Convert to percentage of container
+                        carOutBar.style.width = `${barWidth}%`;
+                        
+                        // Change color based on target
+                        if (car < 20) {
+                            carOutBar.classList.remove('bg-blue-600', 'bg-green-600');
+                            carOutBar.classList.add('bg-red-600');
+                            if(carOutCar) carOutCar.classList.remove('text-blue-700', 'text-green-700');
+                            if(carOutCar) carOutCar.classList.add('text-red-700');
+                        } else if (car < 25) {
+                            carOutBar.classList.remove('bg-red-600', 'bg-green-600');
+                            carOutBar.classList.add('bg-blue-600');
+                            if(carOutCar) carOutCar.classList.remove('text-red-700', 'text-green-700');
+                            if(carOutCar) carOutCar.classList.add('text-blue-700');
+                        } else {
+                            carOutBar.classList.remove('bg-red-600', 'bg-blue-600');
+                            carOutBar.classList.add('bg-green-600');
+                            if(carOutCar) carOutCar.classList.remove('text-red-700', 'text-blue-700');
+                            if(carOutCar) carOutCar.classList.add('text-green-700');
+                        }
+                    }
+
+                } catch (e) {
+                    console.error("CAR calc error:", e);
+                }
+            }
+            if (carInputs.length > 0) {
+                carInputs.forEach(input => input.addEventListener('input', calculateCAR));
+                calculateCAR(); // Initial calc
+            }
+
+            // --- 8.2. Structure Simulator ---
+            const structureInputs = document.querySelectorAll('.structure-calc-input');
+            const guaranteePctLabel = document.getElementById('guarantee-pct-label');
+            const structureOutEad = document.getElementById('structure-out-ead');
+            const structureOutEfficiency = document.getElementById('structure-out-efficiency');
+            const structureOutCapital = document.getElementById('structure-out-capital');
+
+            function simulateStructure() {
+                try {
+                    const loanAmount = parseFloat(document.getElementById('loan-amount').value) || 0;
+                    const guaranteePct = parseFloat(document.getElementById('guarantee-pct').value) || 0;
+                    const structure = document.getElementById('guarantee-structure').value;
+
+                    const ead = loanAmount * (guaranteePct / 100);
+                    if(guaranteePctLabel) guaranteePctLabel.textContent = `${guaranteePct}%`;
+                    if(structureOutEad) structureOutEad.textContent = `PKR ${ead.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+
+                    let efficiency = "Moderate";
+                    let capital = "Proportional to Risk";
+                    let efficiencyColor = "text-blue-700";
+                    let capitalColor = "text-blue-700";
+
+                    if (structure === 'first-loss') {
+                        efficiency = "Very Low";
+                        capital = `100% of EAD (${ead.toLocaleString('en-US', { maximumFractionDigits: 0 })})`;
+                        efficiencyColor = "text-red-700";
+                        capitalColor = "text-red-700";
+                    } else if (structure === 'second-loss') {
+                        efficiency = "Very High";
+                        capital = "Fraction of EAD (Model-Dependent)";
+                        efficiencyColor = "text-green-700";
+                        capitalColor = "text-green-700";
+                    }
+
+                    if(structureOutEfficiency) structureOutEfficiency.textContent = efficiency;
+                    if(structureOutCapital) structureOutCapital.textContent = capital;
+                    
+                    if(structureOutEfficiency) structureOutEfficiency.className = `text-2xl font-bold ${efficiencyColor}`;
+                    if(structureOutCapital) structureOutCapital.className = `text-2xl font-bold ${capitalColor}`;
+
+                } catch (e) {
+                    console.error("Structure calc error:", e);
+                }
+            }
+            if (structureInputs.length > 0) {
+                structureInputs.forEach(input => input.addEventListener('input', simulateStructure));
+                simulateStructure(); // Initial calc
+            }
+
+            // --- 8.3. Pricing Matrix ---
+            const pricingInputs = document.querySelectorAll('.pricing-calc-input');
+            const pricingOutFee = document.getElementById('pricing-out-fee');
+            const pricingMatrix = {
+                'low-low': '~120 bps',
+                'low-medium': '~170 bps',
+                'low-high': '~220 bps',
+                'medium-low': '~210 bps',
+                'medium-medium': '~285 bps',
+                'medium-high': '~380 bps',
+                'high-low': '~250 bps',
+                'high-medium': '~400 bps',
+                'high-high': '~550 bps',
+                'vhigh-low': '~350 bps',
+                'vhigh-medium': '~550 bps',
+                'vhigh-high': '>700 bps'
+            };
+            function updatePricing() {
+                try {
+                    const pd = document.getElementById('pricing-pd').value;
+                    const lgd = document.getElementById('pricing-lgd').value;
+                    const key = `${pd}-${lgd}`;
+                    if(pricingOutFee) pricingOutFee.textContent = pricingMatrix[key] || 'N/A';
+                } catch (e) {
+                    console.error("Pricing calc error:", e);
+                }
+            }
+            if (pricingInputs.length > 0) {
+                pricingInputs.forEach(input => input.addEventListener('input', updatePricing));
+                updatePricing(); // Initial calc
+            }
+
+            // --- 8.4. Intensity Calculator ---
+            const intensityInputs = document.querySelectorAll('.intensity-calc-input');
+            const intensityConcLabel = document.getElementById('intensity-conc-label');
+            const intensityVintageLabel = document.getElementById('intensity-vintage-label');
+            const intensityOutFinal = document.getElementById('intensity-out-final');
+
+            function calculateIntensity() {
+                try {
+                    const baseK = parseFloat(document.getElementById('base-k').value) || 0;
+                    const structure = parseFloat(document.getElementById('intensity-structure').value) || 0;
+                    const conc = parseFloat(document.getElementById('intensity-conc').value) || 0;
+                    const vintage = parseFloat(document.getElementById('intensity-vintage').value) || 0;
+                    
+                    const finalIntensity = baseK * structure * conc * vintage;
+
+                    if(intensityConcLabel) intensityConcLabel.textContent = conc.toFixed(2);
+                    if(intensityVintageLabel) intensityVintageLabel.textContent = vintage.toFixed(2);
+                    if(intensityOutFinal) intensityOutFinal.textContent = `${finalIntensity.toFixed(2)}%`;
+                } catch (e) {
+                    console.error("Intensity calc error:", e);
+                }
+            }
+            if (intensityInputs.length > 0) {
+                intensityInputs.forEach(input => input.addEventListener('input', calculateIntensity));
+                calculateIntensity(); // Initial calc
+            }
+
+            // ======================================================
+            // 9. Operations Manual - Process Flow
+            // ======================================================
+            const opsTabs = document.querySelectorAll('.ops-flow-tab');
+            const opsContents = document.querySelectorAll('.ops-flow-content');
+
+            opsTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetId = tab.getAttribute('data-target');
+                    
+                    // Update tabs
+                    opsTabs.forEach(t => {
+                        t.classList.remove('border-indigo-500', 'text-indigo-600');
+                        t.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    });
+                    tab.classList.add('border-indigo-500', 'text-indigo-600');
+                    tab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    
+                    // Update content
+                    opsContents.forEach(content => {
+                        if (content.id === targetId) {
+                            content.classList.remove('hidden');
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            // ======================================================
+            // 10. AML/CFT Scenario Selector
+            // ======================================================
+            const amlScenarioSelect = document.getElementById('aml-scenario');
+            const amlScenarioContents = document.querySelectorAll('.aml-scenario-content');
+
+            function updateAmlScenario() {
+                if (!amlScenarioSelect) return;
+                const targetId = `aml-scenario-${amlScenarioSelect.value}`;
+                amlScenarioContents.forEach(content => {
+                    if (content.id === targetId) {
+                        content.classList.remove('hidden');
+                    } else {
+                        content.classList.add('hidden');
+                    }
+                });
+            }
+            if (amlScenarioSelect) {
+                amlScenarioSelect.addEventListener('change', updateAmlScenario);
+                updateAmlScenario(); // Initial load
+            }
+
+            // ======================================================
+            // 11. Board Evaluation - Process Flow
+            // ======================================================
+            const evalTabs = document.querySelectorAll('.eval-flow-tab');
+            const evalContents = document.querySelectorAll('.eval-flow-content');
+
+            evalTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const targetId = tab.getAttribute('data-target');
+
+                    // Update tabs
+                    evalTabs.forEach(t => {
+                        t.classList.remove('border-indigo-500', 'text-indigo-600');
+                        t.classList.add('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    });
+                    tab.classList.add('border-indigo-500', 'text-indigo-600');
+                    tab.classList.remove('border-transparent', 'text-gray-500', 'hover:text-gray-700', 'hover:border-gray-300');
+                    
+                    // Update content
+                    evalContents.forEach(content => {
+                        if (content.id === targetId) {
+                            content.classList.remove('hidden');
+                        } else {
+                            content.classList.add('hidden');
+                        }
+                    });
+                });
+            });
+
+            // ======================================================
+            // 12. CAPEX Pie Chart Generation
+            // ======================================================
+            // Helper function for pie chart formatting
+            const formatPkr = (value) => `PKR ${value.toLocaleString('en-US', { maximumFractionDigits: 0 })}`;
+
+            // --- Chart 1: Civil ID/Finishes ---
+            const civilCtx = document.getElementById('civilPieChart');
+            if (civilCtx) {
+                new Chart(civilCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Dismantling', 'Wet Works', 'Flooring', 'Paint', 'Partitions', 'Doors', 'Ceiling', 'Paneling', 'Pantry', 'Furniture', 'Blinds', 'Misc.'],
+                        datasets: [{
+                            data: [100000, 752000, 1410000, 540000, 3960000, 1160000, 1650000, 1050000, 1500000, 2700000, 360000, 828000],
+                            backgroundColor: ['#4f46e5', '#6366f1', '#818cf8', '#a5b4fc', '#c7d2fe', '#e0e7ff', '#3b82f6', '#60a5fa', '#93c5fd', '#bfdbfe', '#dbeafe', '#eff6ff'],
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => `${context.label}: ${formatPkr(context.raw)}` } } }
+                    }
+                });
+            }
+
+            // --- Chart 2: HVAC System ---
+            const hvacCtx = document.getElementById('hvacPieChart');
+            if (hvacCtx) {
+                new Chart(hvacCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Indoor Units', 'Outdoor Units', 'Piping/Insulation', 'Ventilation', 'Grilles/Diffusers'],
+                        datasets: [{
+                            data: [3400000, 6000000, 2800000, 1890000, 1200000],
+                            backgroundColor: ['#0d9488', '#2dd4bf', '#5eead4', '#99f6e4', '#ccfbf1'],
+                        }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => `${context.label}: ${formatPkr(context.raw)}` } } }
+                    }
+                });
+            }
+
+            // --- Chart 3: Electrical System ---
+            const electricalCtx = document.getElementById('electricalPieChart');
+            if (electricalCtx) {
+                new Chart(electricalCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['DBs/Breakers', 'Cabling/Wiring', 'Conduits/Trunking', 'UPS System', 'Lighting Fixtures', 'Switches/Sockets'],
+                        datasets: [{
+                            data: [1800000, 2850000, 1650000, 1500000, 2100000, 850000],
+                             backgroundColor: ['#d97706', '#f59e0b', '#fbbf24', '#fcd34d', '#fde68a', '#fef3c7'],
+                        }]
+                    },
+                     options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => `${context.label}: ${formatPkr(context.raw)}` } } }
+                    }
+                });
+            }
+            
+            // --- Chart 4: Fire Safety System ---
+            const fireSafetyCtx = document.getElementById('fireSafetyPieChart');
+             if (fireSafetyCtx) {
+                new Chart(fireSafetyCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Fire Alarm', 'Piping/Supports', 'Equipment', 'Clean Agent (IT)'],
+                        datasets: [{
+                            data: [2350000, 1050000, 146000, 1700000],
+                            backgroundColor: ['#dc2626', '#ef4444', '#f87171', '#fca5a5'],
+                        }]
+                    },
+                     options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => `${context.label}: ${formatPkr(context.raw)}` } } }
+                    }
+                });
+            }
+
+             // --- Chart 5: Audio Video System ---
+            const avCtx = document.getElementById('avPieChart');
+             if (avCtx) {
+                new Chart(avCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Conference Room', 'Huddle Room', 'Board Room'],
+                        datasets: [{
+                            data: [750000, 400000, 1950000],
+                             backgroundColor: ['#9333ea', '#a855f7', '#c084fc'],
+                        }]
+                    },
+                     options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => `${context.label}: ${formatPkr(context.raw)}` } } }
+                    }
+                });
+            }
+
+            // --- Chart 6: Plumbing System ---
+            const plumbingCtx = document.getElementById('plumbingPieChart');
+            if (plumbingCtx) {
+                 new Chart(plumbingCtx, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Piping', 'Sanitary Wares', 'Accessories'],
+                        datasets: [{
+                            data: [1056000, 500000, 144000],
+                            backgroundColor: ['#db2777', '#ec4899', '#f9a8d4'],
+                        }]
+                    },
+                     options: {
+                        responsive: true, maintainAspectRatio: false,
+                        plugins: { legend: { display: false }, tooltip: { callbacks: { label: (context) => `${context.label}: ${formatPkr(context.raw)}` } } }
+                    }
+                });
+            }
+
+        });
+    </script>
+</body>
+</html>
+
